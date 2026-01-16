@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Заполнение таблицы Portfolio из бакета</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Заполнение таблицы Portfolio из бакета Storage</h1>
+        <p>Этот скрипт автоматически заполнит таблицу <code>portfolio</code> на основе видео файлов в бакете <code>portfolio</code>.</p>
+        
+        <button id="fillBtn" onclick="fillPortfolio()">Заполнить таблицу</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        import { fillPortfolioFromStorage } from './js/supabase-client.js';
+        
+        window.fillPortfolio = async function() {
+            const btn = document.getElementById('fillBtn');
+            const result = document.getElementById('result');
+            
+            btn.disabled = true;
+            result.innerHTML = '<span class="info">Обработка...</span>';
+            
+            try {
+                const response = await fillPortfolioFromStorage('portfolio');
+                
+                if (response.success) {
+                    result.innerHTML = `
+                        <div class="success">
+                            <h3>✓ Успешно!</h3>
+                            <p>Создано записей: ${response.created}</p>
+                            <p>Обновлено записей: ${response.updated}</p>
+                            <p>Ошибок: ${response.errors}</p>
+                            ${response.errorList && response.errorList.length > 0 ? 
+                                '<p>Список ошибок:<br>' + response.errorList.join('<br>') + '</p>' : ''}
+                        </div>
+                    `;
+                } else {
+                    result.innerHTML = `<div class="error">Ошибка: ${response.error}</div>`;
+                }
+            } catch (error) {
+                result.innerHTML = `<div class="error">Исключение: ${error.message}</div>`;
+                console.error('Ошибка:', error);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>

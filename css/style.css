@@ -3783,7 +3783,9 @@ body.page-exit {
 .portfolio-grid-section {
     background: #232326;
     position: relative;
-    padding-bottom: 100px;
+    padding-bottom: 150px;
+    overflow: visible;
+    min-height: auto;
 }
 
 .portfolio-grid-container {
@@ -3794,16 +3796,18 @@ body.page-exit {
     padding: 0;
     box-sizing: border-box;
     overflow: visible;
+    min-height: auto;
 }
 
 .portfolio-filters {
     position: relative;
-    left: 108px;
     top: 67px;
-    margin-bottom: 30px;
+    margin: 0 auto 30px;
     display: flex;
     gap: 6px;
     flex-wrap: wrap;
+    justify-content: center;
+    width: fit-content;
 }
 
 .portfolio-filter-btn {
@@ -3838,16 +3842,25 @@ body.page-exit {
 
 .portfolio-masonry {
     position: relative;
-    left: 100px;
     top: 198px;
     width: 1000px;
-    margin-bottom: 50px;
+    max-width: 100%;
+    margin: 0 auto 50px;
     min-height: 500px;
+    /* CSS Grid для матричного подхода */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    /* Фиксированная высота строки для точного выравнивания */
+    /* Высота рассчитывается: для вертикальных элементов (9-16) высота = columnWidth * 2 */
+    /* Вертикальный элемент занимает 2 строки, значит одна строка = columnWidth */
+    /* columnWidth = (1000px - 3*10px) / 4 = 242.5px */
+    grid-auto-rows: 242.5px;
 }
 
 .portfolio-page .portfolio-item,
 .portfolio-grid-section .portfolio-item {
-    position: absolute;
+    position: relative;
     border-radius: 20px;
     overflow: hidden;
     cursor: pointer;
@@ -3856,6 +3869,13 @@ body.page-exit {
     background: transparent;
     margin: 0;
     padding: 0;
+    z-index: 1;
+    /* Предотвращаем растяжение элементов в Grid */
+    align-self: start;
+    justify-self: start;
+    /* Элементы не должны растягиваться за пределы заданных размеров */
+    min-width: 0;
+    min-height: 0;
 }
 
 .portfolio-page .portfolio-item .content,
@@ -3881,15 +3901,8 @@ body.page-exit {
 
 .portfolio-page .portfolio-item .content img,
 .portfolio-grid-section .portfolio-item .content img {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     width: 100%;
     height: 100%;
-    max-height: none;
-    min-height: unset;
     object-fit: cover;
     object-position: center;
     display: block;
@@ -3931,6 +3944,7 @@ body.page-exit {
     position: relative;
     width: 100%;
     padding: 50px 0;
+    z-index: 10;
 }
 
 .portfolio-order-container {
@@ -6240,39 +6254,89 @@ body.page-exit {
 
 /* Responsive Video Player */
 @media (max-width: 768px) {
+    .video-player {
+        /* На мобильных устройствах плеер должен занимать весь экран */
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        max-width: 100vw;
+        max-height: 100vh;
+    }
+    
     .video-player-content {
-        width: 95%;
+        width: 100%;
+        max-width: 100vw;
+        max-height: 100vh;
+        height: 100vh;
+        transform: none;
+        border-radius: 0;
+    }
+    
+    .video-player-container {
+        width: 100%;
+        height: 100%;
+        max-width: 100vw;
+        max-height: 100vh;
+        border-radius: 0;
+        aspect-ratio: auto;
+    }
+    
+    .video-player-video {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        /* Для мобильных устройств видео должно занимать весь экран */
     }
     
     .video-player-close {
-        top: -40px;
-        width: 36px;
-        height: 36px;
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
         font-size: 28px;
+        z-index: 10004;
     }
     
     .video-player-controls {
-        padding: 15px;
-        gap: 10px;
+        padding: 10px;
+        gap: 8px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
     }
     
     .video-control-btn {
-        width: 36px;
-        height: 36px;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
     }
     
     .video-control-btn svg {
-        width: 18px;
-        height: 18px;
+        width: 20px;
+        height: 20px;
     }
     
     .video-control-time {
         font-size: 12px;
-        min-width: 80px;
+        min-width: 70px;
     }
     
     .video-volume-slider {
         width: 60px;
+    }
+    
+    /* Скрываем некоторые элементы на очень маленьких экранах */
+    @media (max-width: 480px) {
+        .video-volume-control {
+            display: none;
+        }
+        
+        .video-control-settings {
+            display: none;
+        }
     }
 }
 

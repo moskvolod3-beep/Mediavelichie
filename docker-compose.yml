@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Веб-сервер для статического сайта
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mediavelichie-web
+    ports:
+      - "80:80"
+    volumes:
+      # Для разработки можно монтировать текущую директорию
+      # - ./:/usr/share/nginx/html:ro
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    depends_on:
+      - supabase
+
+  # Supabase локальный стек
+  supabase:
+    image: supabase/postgres:15.1.0.117
+    container_name: mediavelichie-supabase-db
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      PGRST_DB_URI: postgres://authenticator:postgres@localhost:5432/postgres
+      PGRST_DB_SCHEMAS: public,storage,graphql_public
+      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
+      PGRST_JWT_SECRET: your-super-secret-jwt-token-with-at-least-32-characters-long
+      PGRST_DB_ANON_ROLE: anon
+      GOTRUE_JWT_SECRET: your-super-secret-jwt-token-with-at-least-32-characters-long
+      GOTRUE_JWT_EXP: 3600
+      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
+      GOTRUE_JWT_ADMIN_ROLES: service_role
+      GOTRUE_JWT_AUD: authenticated
+      GOTRUE_JWT_ADMIN_AUD: service_role
+      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
+      GOTRUE_EXTERNAL_PHONE_ENABLED: "true"
+      GOTRUE_SMS_AUTOCONFIRM: "true"
+      GOTRUE_MAILER_AUTOCONFIRM: "true"
+      POSTGRES_PASSWORD: your-super-secret-postgres-password
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Supabase Studio (опционально, для администрирования)
+  supabase-studio:
+    image: supabase/studio:20231220-0a8c4b5
+    container_name: mediavelichie-supabase-studio
+    ports:
+      - "3000:3000"
+    environment:
+      STUDIO_PG_META_URL: http://meta:8080
+      POSTGRES_PASSWORD: your-super-secret-postgres-password
+    depends_on:
+      - supabase
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+
+volumes:
+  supabase-db-data:
+
+networks:
+  mediavelichie-network:
+    driver: bridge

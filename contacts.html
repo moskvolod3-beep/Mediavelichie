@@ -183,7 +183,49 @@
     <script src="js/page-transitions.js"></script>
     <script src="js/nav.js"></script>
     <script src="js/footer.js"></script>
-    <script src="js/order-popup.js"></script>
+    <script type="module" src="js/order-popup.js"></script>
+    <script type="module">
+        // Обработчик формы на странице контактов
+        import { createOrder } from './js/supabase-client.js';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const contactsForm = document.querySelector('.contacts-form');
+            if (contactsForm) {
+                contactsForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(contactsForm);
+                    const data = {
+                        name: formData.get('name'),
+                        phone: formData.get('phone'),
+                        message: formData.get('message'),
+                        privacy_accepted: true // На странице контактов согласие подразумевается
+                    };
+                    
+                    const submitBtn = contactsForm.querySelector('button[type="submit"]');
+                    const originalBtnText = submitBtn.textContent;
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Отправка...';
+                    
+                    try {
+                        const result = await createOrder(data);
+                        if (result.success) {
+                            alert('Спасибо за заявку! Мы свяжемся с Вами в ближайшее время.');
+                            contactsForm.reset();
+                        } else {
+                            alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+                        }
+                    } catch (error) {
+                        console.error('Ошибка при отправке заявки:', error);
+                        alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+                    } finally {
+                        submitBtn.disabled = false;
+                        submitBtn.textContent = originalBtnText;
+                    }
+                });
+            }
+        });
+    </script>
     <script>
         // Handle hash parameter for form (e.g., contacts.html#form)
         document.addEventListener('DOMContentLoaded', function() {

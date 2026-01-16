@@ -113,7 +113,6 @@
                     <button class="portfolio-filter-btn" data-category="ekspertnye">Экспертные</button>
                     <button class="portfolio-filter-btn" data-category="reklamnye">Рекламные</button>
                     <button class="portfolio-filter-btn" data-category="hr">HR-видео</button>
-                    <button class="portfolio-filter-btn" data-category="sfery">Сферы</button>
                 </div>
 
                 <!-- MASONRY GRID -->
@@ -193,9 +192,16 @@
     <script src="js/page-transitions.js"></script>
     <script src="js/nav.js"></script>
     <script src="js/footer.js"></script>
-    <script src="js/order-popup.js"></script>
+    <script type="module" src="js/order-popup.js"></script>
     <script src="js/video-player.js"></script>
-    <script src="js/portfolio.js"></script>
+    <script type="module" src="js/portfolio.js"></script>
+    <script type="module">
+        // Импортируем функцию для заполнения таблицы из бакета
+        import { fillPortfolioFromStorage } from './js/supabase-client.js';
+        window.fillPortfolioFromStorage = fillPortfolioFromStorage;
+        console.log('Для заполнения таблицы portfolio из бакета выполните в консоли:');
+        console.log('fillPortfolioFromStorage().then(result => console.log(result))');
+    </script>
     <script>
         // Initialize navigation for portfolio page
         if (typeof initNavigation === 'function') {

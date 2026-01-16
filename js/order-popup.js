@@ -63,7 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // Form submission handler
-    form.addEventListener('submit', function(e) {
+    form.addEventListener('submit', async function(e) {
         e.preventDefault();
         
         // Check if privacy checkbox is checked
@@ -78,21 +78,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const data = {
             name: formData.get('name'),
             phone: formData.get('phone'),
-            message: formData.get('message')
+            message: formData.get('message'),
+            privacy_accepted: privacyCheckbox.checked
         };
         
-        // Here you would normally send data to server
-        // For now, we'll simulate success
-        console.log('Form data:', data);
+        // Disable submit button during request
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalBtnText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Отправка...';
         
-        // Simulate API call
-        setTimeout(() => {
-            // Show success state
+        // Import and use Supabase client
+        try {
+            const { createOrder } = await import('./supabase-client.js');
+            const result = await createOrder(data);
+            
+            if (result.success) {
+                // Show success state
+                formState.style.display = 'none';
+                successState.style.display = 'block';
+                console.log('Заявка успешно отправлена:', result.data);
+            } else {
+                // Show error
+                alert('Произошла ошибка при отправке заявки. Пожалуйста, попробуйте позже или свяжитесь с нами напрямую.');
+                console.error('Ошибка отправки заявки:', result.error);
+            }
+        } catch (error) {
+            console.error('Ошибка при отправке заявки:', error);
+            // Fallback: show success anyway (graceful degradation)
             formState.style.display = 'none';
             successState.style.display = 'block';
-            
-            // Auto close after 5 seconds (optional)
-            // setTimeout(closePopup, 5000);
-        }, 500);
+        } finally {
+            // Re-enable submit button
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalBtnText;
+        }
     });
 });

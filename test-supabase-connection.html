@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест подключения к Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            background: #2a2a2a;
+            padding: 30px;
+            border-radius: 10px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px 10px 0;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #333;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            max-height: 500px;
+            overflow-y: auto;
+        }
+        .success { color: #4CAF50; }
+        .error { color: #f44336; }
+        .info { color: #2196F3; }
+        .warning { color: #ff9800; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #444;
+        }
+        th {
+            background: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Тест подключения к Supabase</h1>
+        <p>Проверка подключения к базе данных и загрузки данных из таблицы <code>portfolio</code>.</p>
+        
+        <button onclick="testConnection()">Проверить подключение</button>
+        <button onclick="loadPortfolio()">Загрузить портфолио</button>
+        <button onclick="clearResult()">Очистить</button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script type="module">
+        import { initSupabase, getSupabaseClient, getPortfolio } from './js/supabase-client.js';
+        import { SUPABASE_CONFIG } from './supabase/config.js';
+
+        window.testConnection = async function() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<span class="info">Проверка подключения...</span>';
+            
+            try {
+                // Проверяем конфигурацию
+                result.innerHTML = '<div class="info"><h3>Конфигурация:</h3>';
+                result.innerHTML += `URL: ${SUPABASE_CONFIG.url}<br>`;
+                result.innerHTML += `Anon Key: ${SUPABASE_CONFIG.anonKey ? SUPABASE_CONFIG.anonKey.substring(0, 20) + '...' : 'НЕ УСТАНОВЛЕН'}<br></div>`;
+                
+                // Инициализируем клиент
+                const client = initSupabase();
+                if (!client) {
+                    result.innerHTML += '<div class="error">❌ Не удалось инициализировать Supabase клиент</div>';
+                    return;
+                }
+                
+                result.innerHTML += '<div class="success">✓ Supabase клиент инициализирован</div>';
+                
+                // Проверяем подключение через простой запрос
+                const { data, error } = await client
+                    .from('portfolio')
+                    .select('id')
+                    .limit(1);
+                
+                if (error) {
+                    result.innerHTML += `<div class="error">❌ Ошибка подключения: ${error.message}</div>`;
+                } else {
+                    result.innerHTML += '<div class="success">✓ Подключение к базе данных успешно</div>';
+                }
+            } catch (error) {
+                result.innerHTML += `<div class="error">❌ Исключение: ${error.message}</div>`;
+                console.error('Ошибка:', error);
+            }
+        };
+
+        window.loadPortfolio = async function() {
+            const result = document.getElementById('result');
+            result.innerHTML = '<span class="info">Загрузка данных из таблицы portfolio...</span>';
+            
+            try {
+                const data = await getPortfolio();
+                
+                if (!data || data.length === 0) {
+                    result.innerHTML = '<div class="warning">⚠️ Данные не найдены или таблица пуста</div>';
+                    return;
+                }
+                
+                result.innerHTML = `<div class="success"><h3>✓ Загружено записей: ${data.length}</h3></div>`;
+                
+                // Подсчитываем статистику
+                const withVideo = data.filter(item => item.video_url).length;
+                const withoutVideo = data.length - withVideo;
+                
+                result.innerHTML += `<div class="info">
+                    <p>С видео: ${withVideo}</p>
+                    <p>Без видео: ${withoutVideo}</p>
+                </div>`;
+                
+                // Показываем таблицу с данными
+                let tableHTML = '<table><thead><tr><th>ID</th><th>Название</th><th>Категория</th><th>Видео</th><th>URL видео</th></tr></thead><tbody>';
+                
+                data.slice(0, 20).forEach(item => {
+                    const videoStatus = item.video_url ? '✓' : '✗';
+                    const videoUrl = item.video_url ? 
+                        (item.video_url.length > 50 ? item.video_url.substring(0, 50) + '...' : item.video_url) : 
+                        '-';
+                    tableHTML += `<tr>
+                        <td>${item.id.substring(0, 8)}...</td>
+                        <td>${item.title || '-'}</td>
+                        <td>${item.category}</td>
+                        <td>${videoStatus}</td>
+                        <td>${videoUrl}</td>
+                    </tr>`;
+                });
+                
+                tableHTML += '</tbody></table>';
+                result.innerHTML += tableHTML;
+                
+                // Показываем элементы с видео
+                const videos = data.filter(item => item.video_url);
+                if (videos.length > 0) {
+                    result.innerHTML += `<div class="info"><h4>Элементы с видео (${videos.length}):</h4>`;
+                    videos.forEach(item => {
+                        result.innerHTML += `<div style="margin: 5px 0;">
+                            <strong>${item.title || 'Без названия'}</strong> (${item.category})<br>
+                            <small>${item.video_url}</small>
+                        </div>`;
+                    });
+                    result.innerHTML += '</div>';
+                }
+                
+            } catch (error) {
+                result.innerHTML = `<div class="error">❌ Ошибка загрузки: ${error.message}</div>`;
+                console.error('Ошибка:', error);
+            }
+        };
+
+        window.clearResult = function() {
+            document.getElementById('result').innerHTML = '';
+        };
+    </script>
+</body>
+</html>

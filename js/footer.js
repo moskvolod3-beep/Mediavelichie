@@ -30,7 +30,6 @@ function createFooter() {
                             <li><a href="portfolio.html#filter-ekspertnye" class="footer-link portfolio-filter-link" data-category="ekspertnye">Экспертные</a></li>
                             <li><a href="portfolio.html#filter-reklamnye" class="footer-link portfolio-filter-link" data-category="reklamnye">Рекламные</a></li>
                             <li><a href="portfolio.html#filter-hr" class="footer-link portfolio-filter-link" data-category="hr">HR-видео</a></li>
-                            <li><a href="portfolio.html#filter-sfery" class="footer-link portfolio-filter-link" data-category="sfery">Области</a></li>
                         </ul>
                     </div>
                     <div class="footer-column footer-column-contacts">

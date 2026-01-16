@@ -489,21 +489,32 @@
         <script src="js/video-player.js"></script>
         <script src="js/main.js"></script>
         <script src="js/carousel.js"></script>
+        <!-- Загрузка отзывов из Supabase -->
+        <script type="module" src="js/reviews-loader.js"></script>
         <script>
             document.addEventListener('DOMContentLoaded', () => {
-                const container = document.querySelector('.reviews-3d-container');
-                if (container) {
-                    const carousel = new Carousel3D(container, {
-                        radius: 400,
-                        cardWidth: 324
-                    });
+                // Инициализация карусели отзывов будет выполнена в reviews-loader.js
+                // Этот код будет выполнен после загрузки отзывов
+                setTimeout(() => {
+                    const container = document.querySelector('.reviews-3d-container');
+                    if (container && container.querySelector('.review-card-3d')) {
+                        if (typeof Carousel3D !== 'undefined') {
+                            const carousel = new Carousel3D(container, {
+                                radius: 400,
+                                cardWidth: 324
+                            });
 
-                    const prevBtn = document.querySelector('.reviews-prev');
-                    const nextBtn = document.querySelector('.reviews-next');
+                            const prevBtn = document.querySelector('.reviews-prev');
+                            const nextBtn = document.querySelector('.reviews-next');
 
-                    if (prevBtn) prevBtn.addEventListener('click', () => carousel.prev());
-                    if (nextBtn) nextBtn.addEventListener('click', () => carousel.next());
-                }
+                            if (prevBtn) prevBtn.addEventListener('click', () => carousel.prev());
+                            if (nextBtn) nextBtn.addEventListener('click', () => carousel.next());
+                            
+                            // Сохраняем ссылку на карусель для обновления в reviews-loader.js
+                            window.reviewsCarousel = carousel;
+                        }
+                    }
+                }, 500);
             });
         </script>
 
@@ -553,7 +564,7 @@
             </div>
         </div>
 
-        <script src="js/order-popup.js"></script>
+        <script type="module" src="js/order-popup.js"></script>
         <script src="js/animations.js"></script>
 </body>
 

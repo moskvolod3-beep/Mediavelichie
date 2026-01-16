@@ -220,7 +220,12 @@
         
         // Fullscreen
         function updateFullscreenButton() {
-            if (document.fullscreenElement) {
+            const isFullscreen = document.fullscreenElement || 
+                                document.webkitFullscreenElement || 
+                                document.mozFullScreenElement || 
+                                document.msFullscreenElement;
+            
+            if (isFullscreen) {
                 fullscreenIcon.style.display = 'none';
                 fullscreenExitIcon.style.display = 'block';
             } else {
@@ -229,17 +234,55 @@
             }
         }
         
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                videoPlayer.requestFullscreen().catch(err => {
+        function enterFullscreen() {
+            const element = videoElement; // Используем video элемент для полноэкранного режима
+            
+            if (element.requestFullscreen) {
+                element.requestFullscreen().catch(err => {
                     console.log('Error attempting to enable fullscreen:', err);
                 });
-            } else {
+            } else if (element.webkitRequestFullscreen) {
+                element.webkitRequestFullscreen();
+            } else if (element.webkitEnterFullscreen) {
+                // Для iOS
+                element.webkitEnterFullscreen();
+            } else if (element.mozRequestFullScreen) {
+                element.mozRequestFullScreen();
+            } else if (element.msRequestFullscreen) {
+                element.msRequestFullscreen();
+            }
+        }
+        
+        function exitFullscreen() {
+            if (document.exitFullscreen) {
                 document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            }
+        }
+        
+        fullscreenBtn.addEventListener('click', () => {
+            const isFullscreen = document.fullscreenElement || 
+                                document.webkitFullscreenElement || 
+                                document.mozFullScreenElement || 
+                                document.msFullscreenElement;
+            
+            if (!isFullscreen) {
+                enterFullscreen();
+            } else {
+                exitFullscreen();
             }
         });
         
+        // Слушаем события изменения полноэкранного режима
         document.addEventListener('fullscreenchange', updateFullscreenButton);
+        document.addEventListener('webkitfullscreenchange', updateFullscreenButton);
+        document.addEventListener('mozfullscreenchange', updateFullscreenButton);
+        document.addEventListener('MSFullscreenChange', updateFullscreenButton);
         
         // Settings menu
         settingsBtn.addEventListener('click', (e) => {
@@ -291,6 +334,36 @@
         }
     }
     
+    // Detect mobile device
+    function isMobileDevice() {
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+               (window.matchMedia && window.matchMedia('(max-width: 768px)').matches);
+    }
+    
+    // Enter fullscreen for mobile devices
+    function enterFullscreenForMobile() {
+        if (!isMobileDevice() || !videoElement) return;
+        
+        // Для iOS используем webkitEnterFullscreen
+        if (videoElement.webkitEnterFullscreen) {
+            videoElement.webkitEnterFullscreen();
+            return;
+        }
+        
+        // Для других мобильных устройств используем стандартный API
+        if (videoElement.requestFullscreen) {
+            videoElement.requestFullscreen().catch(err => {
+                console.log('Error entering fullscreen:', err);
+            });
+        } else if (videoElement.webkitRequestFullscreen) {
+            videoElement.webkitRequestFullscreen();
+        } else if (videoElement.mozRequestFullScreen) {
+            videoElement.mozRequestFullScreen();
+        } else if (videoElement.msRequestFullscreen) {
+            videoElement.msRequestFullscreen();
+        }
+    }
+    
     // Open video player
     function openVideoPlayer(videoSrc) {
         if (!videoPlayer) {
@@ -299,13 +372,56 @@
         
         videoElement = document.getElementById('videoPlayerVideo');
         videoElement.src = videoSrc;
+        
+        // На мобильных устройствах добавляем атрибуты для полноэкранного режима
+        if (isMobileDevice()) {
+            // Для iOS и других мобильных браузеров
+            videoElement.setAttribute('playsinline', 'false');
+            videoElement.setAttribute('webkit-playsinline', 'false');
+            // Для WeChat и других китайских браузеров
+            videoElement.setAttribute('x5-playsinline', 'false');
+            videoElement.setAttribute('x5-video-player-type', 'h5');
+            videoElement.setAttribute('x5-video-player-fullscreen', 'true');
+            videoElement.setAttribute('x5-video-orientation', 'portraint');
+            // Добавляем класс для мобильных устройств
+            videoPlayer.classList.add('mobile-device');
+        } else {
+            videoElement.setAttribute('playsinline', 'true');
+            videoPlayer.classList.remove('mobile-device');
+        }
+        
         videoPlayer.classList.add('active');
         document.body.style.overflow = 'hidden';
         
+        // На мобильных устройствах сразу пытаемся войти в полноэкранный режим
+        if (isMobileDevice()) {
+            // Небольшая задержка для загрузки видео
+            setTimeout(() => {
+                enterFullscreenForMobile();
+            }, 100);
+        }
+        
         // Auto-play (optional - may be blocked by browser)
-        videoElement.play().catch(err => {
-            console.log('Autoplay prevented:', err);
-        });
+        const playPromise = videoElement.play();
+        
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                // На мобильных устройствах после начала воспроизведения еще раз пытаемся войти в полноэкранный режим
+                if (isMobileDevice()) {
+                    setTimeout(() => {
+                        enterFullscreenForMobile();
+                    }, 200);
+                }
+            }).catch(err => {
+                console.log('Autoplay prevented:', err);
+                // Даже если autoplay заблокирован, на мобильных пытаемся войти в полноэкранный режим
+                if (isMobileDevice()) {
+                    setTimeout(() => {
+                        enterFullscreenForMobile();
+                    }, 300);
+                }
+            });
+        }
     }
     
     // Attach event listeners to video play buttons
