@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Админ-панель: Загрузка видео в портфолио</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-bg-main: #0a0a0e;
+            --color-text-primary: #ededed;
+            --color-text-secondary: #8f9094;
+            --color-accent: #ffffff;
+            --font-main: 'Inter', sans-serif;
+            --font-menu: 'Montserrat', sans-serif;
+            --glass-bg: rgba(20, 20, 24, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.05);
+            --radius-sm: 12px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--color-bg-main);
+            color: var(--color-text-primary);
+            min-height: 100vh;
+            padding: 20px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .container {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+        }
+
+        header {
+            background: rgba(35, 35, 38, 0.9);
+            padding: 40px;
+            text-align: center;
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        header h1 {
+            font-size: 42px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--color-text-primary);
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            font-size: 16px;
+            color: var(--color-text-secondary);
+        }
+
+        main {
+            padding: 40px;
+        }
+
+        /* Индикатор шагов */
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: rgba(35, 35, 38, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            gap: 20px;
+        }
+
+        .step {
+            flex: 1;
+            text-align: center;
+            position: relative;
+            color: var(--color-text-secondary);
+        }
+
+        .step::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            right: -50%;
+            width: 100%;
+            height: 2px;
+            background: var(--glass-border);
+            z-index: 0;
+        }
+
+        .step:last-child::after {
+            display: none;
+        }
+
+        .step.active {
+            color: var(--color-text-primary);
+        }
+
+        .step.completed {
+            color: var(--color-text-secondary);
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--color-text-secondary);
+            line-height: 40px;
+            margin-bottom: 10px;
+            border: 1px solid var(--glass-border);
+            font-weight: 600;
+        }
+
+        .step.active .step-number {
+            background: rgba(255, 255, 255, 0.2);
+            color: var(--color-text-primary);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .step.completed .step-number {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+            border-color: rgba(72, 187, 120, 0.3);
+        }
+
+        /* Загрузка видео */
+        .upload-section {
+            margin-bottom: 30px;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-sm);
+            padding: 60px 20px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .upload-area.dragover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.4);
+        }
+
+        .upload-icon {
+            color: var(--color-text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 18px;
+            color: var(--color-text-primary);
+            margin-bottom: 10px;
+        }
+
+        .upload-link {
+            color: var(--color-accent);
+            text-decoration: underline;
+            font-weight: 600;
+        }
+
+        .upload-hint {
+            color: var(--color-text-secondary);
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .file-name {
+            margin-top: 15px;
+            font-weight: 600;
+            color: var(--color-accent);
+            font-size: 16px;
+        }
+
+        /* Кнопки */
+        .submit-btn, .save-btn {
+            width: 100%;
+            padding: 16px 24px;
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--color-text-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font-menu);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .submit-btn:hover:not(:disabled), .save-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .submit-btn:disabled, .save-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loader {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: var(--color-text-primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Выбор категории */
+        .category-selector {
+            margin-bottom: 30px;
+        }
+
+        .category-selector h2 {
+            margin-bottom: 24px;
+            color: var(--color-text-primary);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .category-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .category-btn {
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 16px;
+            font-weight: 600;
+            font-family: var(--font-menu);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .category-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: rgba(255, 255, 255, 0.2);
+            transform: translateY(-2px);
+        }
+
+        .category-btn.selected {
+            background: rgba(72, 187, 120, 0.2);
+            border-color: rgba(72, 187, 120, 0.4);
+            color: #48bb78;
+        }
+
+        /* Выбор обложки */
+        .frames-selection {
+            margin-top: 40px;
+        }
+
+        .frames-selection h2 {
+            margin-bottom: 20px;
+            color: var(--color-text-primary);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .frames-selection p {
+            margin-bottom: 24px;
+            color: var(--color-text-secondary);
+        }
+
+        .frames-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 24px;
+        }
+
+        .frame-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .frame-item:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .frame-item.selectable {
+            cursor: pointer;
+            position: relative;
+        }
+
+        .frame-item.selectable::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            border: 3px solid transparent;
+            border-radius: var(--radius-sm);
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+
+        .frame-item.selectable:hover::before {
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .frame-item.selectable.selected::before {
+            border-color: #48bb78;
+            background: rgba(72, 187, 120, 0.1);
+        }
+
+        .frame-item.selectable.selected::after {
+            content: '✓';
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: #48bb78;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 18px;
+            z-index: 2;
+        }
+
+        .frame-image {
+            width: 100%;
+            height: 200px;
+            overflow: hidden;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .frame-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .frame-info {
+            padding: 16px;
+        }
+
+        .frame-name {
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 10px;
+            word-break: break-word;
+        }
+
+        /* Метаданные */
+        .metadata-section {
+            margin-top: 30px;
+            padding: 30px;
+            background: rgba(35, 35, 38, 0.5);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+        }
+
+        .metadata-section h2 {
+            margin-bottom: 24px;
+            color: var(--color-text-primary);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            font-family: var(--font-menu);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            font-size: 16px;
+            font-family: var(--font-main);
+            color: var(--color-text-primary);
+            transition: all 0.3s ease;
+        }
+
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: var(--color-text-secondary);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-group select {
+            cursor: pointer;
+        }
+
+        /* Обработка */
+        .processing-section {
+            margin: 40px 0;
+        }
+
+        .progress-container {
+            background: rgba(35, 35, 38, 0.5);
+            border: 1px solid var(--glass-border);
+            padding: 30px;
+            border-radius: var(--radius-sm);
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, rgba(255, 255, 255, 0.3) 0%, rgba(255, 255, 255, 0.5) 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-text {
+            text-align: center;
+            font-size: 16px;
+            color: var(--color-text-primary);
+            font-weight: 500;
+        }
+
+        /* Ошибки */
+        .error-section {
+            margin: 20px 0;
+        }
+
+        .error-message {
+            background: rgba(220, 38, 38, 0.1);
+            border: 1px solid rgba(220, 38, 38, 0.3);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            color: #fca5a5;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        /* Admin tabs navigation */
+        .admin-tabs {
+            display: flex;
+            gap: 10px;
+            padding: 20px 40px;
+            background: rgba(35, 35, 38, 0.5);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .admin-tab-btn {
+            padding: 12px 24px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--color-text-secondary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 14px;
+            font-weight: 600;
+            font-family: var(--font-menu);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .admin-tab-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--color-text-primary);
+        }
+
+        .admin-tab-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: var(--color-text-primary);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* Tab content */
+        .tab-content {
+            display: none !important;
+        }
+
+        .tab-content.active {
+            display: block !important;
+        }
+
+        /* Portfolio manager styles */
+        .portfolio-manager {
+            margin-top: 20px;
+        }
+
+        .portfolio-manager h2 {
+            margin-bottom: 24px;
+            color: var(--color-text-primary);
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .portfolio-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .portfolio-item-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .portfolio-item-card:hover {
+            background: rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .portfolio-item-card.hidden {
+            opacity: 0.5;
+            border-color: rgba(255, 0, 0, 0.3);
+        }
+
+        .portfolio-item-preview {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: var(--radius-sm);
+            margin-bottom: 15px;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .portfolio-item-info {
+            margin-bottom: 15px;
+        }
+
+        .portfolio-item-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--color-text-primary);
+            margin-bottom: 8px;
+        }
+
+        .portfolio-item-description {
+            font-size: 14px;
+            color: var(--color-text-secondary);
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+
+        .portfolio-item-meta {
+            font-size: 12px;
+            color: var(--color-text-secondary);
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .portfolio-item-meta span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .portfolio-item-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .btn-edit, .btn-toggle-visibility, .btn-delete {
+            flex: 1;
+            padding: 10px 16px;
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-edit {
+            background: rgba(59, 130, 246, 0.2);
+            color: #60a5fa;
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-edit:hover {
+            background: rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-toggle-visibility {
+            background: rgba(72, 187, 120, 0.2);
+            color: #48bb78;
+            border-color: rgba(72, 187, 120, 0.4);
+        }
+
+        .btn-toggle-visibility:hover {
+            background: rgba(72, 187, 120, 0.3);
+        }
+
+        .btn-toggle-visibility.hidden {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-delete {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border-color: rgba(239, 68, 68, 0.4);
+        }
+
+        .btn-delete:hover {
+            background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Edit modal */
+        .edit-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-modal.active {
+            display: flex;
+        }
+
+        .edit-modal-content {
+            background: var(--glass-bg);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-sm);
+            padding: 40px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .edit-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .edit-modal-header h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--color-text-primary);
+        }
+
+        .edit-modal-close {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            font-size: 32px;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .edit-modal-close:hover {
+            color: var(--color-text-primary);
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 40px;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 28px;
+            }
+            
+            main {
+                padding: 20px;
+            }
+            
+            .upload-area {
+                padding: 40px 15px;
+            }
+            
+            .category-buttons {
+                grid-template-columns: 1fr;
+            }
+
+            .step-indicator {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .step::after {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="container">
+            <header>
+                <h1>Админ-панель: Управление портфолио</h1>
+                <p class="subtitle">Загрузите видео или управляйте существующими работами</p>
+            </header>
+            
+            <!-- Навигация по вкладкам -->
+            <div class="admin-tabs">
+                <button class="admin-tab-btn active" data-tab="upload">Загрузка видео</button>
+                <button class="admin-tab-btn" data-tab="manage">Менеджер проектов</button>
+            </div>
+
+            <main>
+                <!-- Вкладка: Загрузка видео -->
+                <div class="tab-content active" id="uploadTabContent">
+                    <!-- Индикатор шагов -->
+                    <div class="step-indicator">
+                    <div class="step active" id="step1">
+                        <div class="step-number">1</div>
+                        <div>Загрузка видео</div>
+                    </div>
+                    <div class="step" id="step2">
+                        <div class="step-number">2</div>
+                        <div>Выбор категории</div>
+                    </div>
+                    <div class="step" id="step3">
+                        <div class="step-number">3</div>
+                        <div>Выбор обложки</div>
+                    </div>
+                    <div class="step" id="step4">
+                        <div class="step-number">4</div>
+                        <div>Сохранение</div>
+                    </div>
+                </div>
+
+                    <!-- Шаг 1: Загрузка видео -->
+                    <div class="upload-section">
+                        <form id="uploadForm" enctype="multipart/form-data">
+                            <div class="upload-area" id="uploadArea">
+                                <svg class="upload-icon" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                                <p class="upload-text">Перетащите видео сюда или <span class="upload-link">выберите файл</span></p>
+                                <input type="file" id="fileInput" name="file" accept="video/*" style="display: none;">
+                                <p class="upload-hint">Поддерживаются форматы: MP4, MOV, AVI, WebM, MKV, FLV, WMV</p>
+                                <p class="file-name" id="fileName" style="display: none;"></p>
+                            </div>
+
+                            <button type="submit" class="submit-btn" id="submitBtn" disabled>
+                                <span id="submitText">Обработать видео</span>
+                                <span id="submitLoader" class="loader" style="display: none;"></span>
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                    <!-- Шаг 2: Выбор категории -->
+                    <div class="tab-content" id="categoryTab" style="display: none;">
+                        <div class="category-selector">
+                            <h2>Выберите категорию для видео</h2>
+                            <div class="category-buttons">
+                                <button class="category-btn" data-category="ekspertnye">Экспертные</button>
+                                <button class="category-btn" data-category="hr">HR-видео</button>
+                                <button class="category-btn" data-category="ohvatnye">Охватные</button>
+                                <button class="category-btn" data-category="reklamnye">Рекламные</button>
+                            </div>
+                            <button type="button" class="submit-btn" id="nextToFramesBtn" disabled>
+                                Продолжить к выбору обложки
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 3: Выбор обложки -->
+                    <div class="tab-content" id="framesTab" style="display: none;">
+                        <div class="frames-selection">
+                            <h2>Выберите обложку для видео</h2>
+                            <p>Нажмите на кадр, чтобы выбрать его в качестве обложки</p>
+                            <div class="frames-grid" id="framesGrid"></div>
+                            <button type="button" class="submit-btn" id="nextToMetadataBtn" disabled>
+                                Продолжить к заполнению данных
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Шаг 4: Метаданные и сохранение -->
+                    <div class="tab-content" id="metadataTab" style="display: none;">
+                        <div class="metadata-section">
+                            <h2>Заполните информацию о видео</h2>
+                            <form id="metadataForm">
+                                <div class="form-group">
+                                    <label for="titleInput">Название видео *</label>
+                                    <input type="text" id="titleInput" name="title" required placeholder="Введите название видео">
+                                </div>
+                                <div class="form-group">
+                                    <label for="descriptionInput">Описание</label>
+                                    <textarea id="descriptionInput" name="description" placeholder="Введите описание видео (необязательно)"></textarea>
+                                </div>
+                                <div class="form-group">
+                                    <label for="formatSelect">Формат</label>
+                                    <select id="formatSelect" name="format">
+                                        <option value="9-16">9:16 (вертикальный)</option>
+                                        <option value="16-9">16:9 (горизонтальный)</option>
+                                        <option value="1-1">1:1 (квадратный)</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="save-btn" id="saveBtn">
+                                    <span id="saveText">Сохранить в портфолио</span>
+                                    <span id="saveLoader" class="loader" style="display: none;"></span>
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Секция обработки -->
+                    <div class="processing-section" id="processingSection" style="display: none;">
+                        <div class="progress-container">
+                            <div class="progress-bar">
+                                <div class="progress-fill" id="progressFill"></div>
+                            </div>
+                            <p class="progress-text" id="progressText">Обработка видео...</p>
+                        </div>
+                    </div>
+
+                    <!-- Секция ошибок -->
+                    <div class="error-section" id="errorSection" style="display: none;">
+                        <div class="error-message" id="errorMessage"></div>
+                    </div>
+                </div>
+
+                <!-- Вкладка: Менеджер проектов -->
+                <div class="tab-content" id="manageTabContent" style="display: none;">
+                    <div class="portfolio-manager">
+                        <h2>Управление работами портфолио</h2>
+                        <div id="portfolioListContainer">
+                            <div class="loading-state">
+                                <div class="loader" style="margin: 0 auto;"></div>
+                                <p style="margin-top: 20px;">Загрузка работ...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Модальное окно редактирования -->
+                <div class="edit-modal" id="editModal">
+                    <div class="edit-modal-content">
+                        <div class="edit-modal-header">
+                            <h3>Редактировать работу</h3>
+                            <button class="edit-modal-close" id="editModalClose">&times;</button>
+                        </div>
+                        <form id="editForm">
+                            <input type="hidden" id="editItemId" name="id">
+                            <div class="form-group">
+                                <label for="editTitleInput">Название *</label>
+                                <input type="text" id="editTitleInput" name="title" required placeholder="Введите название">
+                            </div>
+                            <div class="form-group">
+                                <label for="editDescriptionInput">Описание</label>
+                                <textarea id="editDescriptionInput" name="description" placeholder="Введите описание" rows="4"></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="editFormatSelect">Формат</label>
+                                <select id="editFormatSelect" name="format">
+                                    <option value="9-16">9:16 (вертикальный)</option>
+                                    <option value="16-9">16:9 (горизонтальный)</option>
+                                    <option value="1-1">1:1 (квадратный)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="editCategorySelect">Категория</label>
+                                <select id="editCategorySelect" name="category">
+                                    <option value="ekspertnye">Экспертные</option>
+                                    <option value="hr">HR-видео</option>
+                                    <option value="ohvatnye">Охватные</option>
+                                    <option value="reklamnye">Рекламные</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="editIsPublishedInput" name="is_published">
+                                    <span style="margin-left: 8px;">Опубликовано (видно на сайте)</span>
+                                </label>
+                            </div>
+                            <div class="portfolio-item-actions" style="margin-top: 20px;">
+                                <button type="button" class="btn-edit" id="editCancelBtn" style="flex: 0 0 auto;">Отмена</button>
+                                <button type="submit" class="save-btn" id="editSaveBtn">
+                                    <span id="editSaveText">Сохранить изменения</span>
+                                    <span id="editSaveLoader" class="loader" style="display: none;"></span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script type="module" src="js/admin-portfolio.js"></script>
+</body>
+</html>

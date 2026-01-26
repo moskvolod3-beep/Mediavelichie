@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /admin-portfolio.html
+Disallow: /backend/
+Disallow: /service1/
+Disallow: /service2/
+
+# Sitemap
+Sitemap: https://mediavelichia.ru/sitemap.xml
