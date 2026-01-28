@@ -24,35 +24,39 @@ $IMAGES = @(
     "supabase/studio:latest"
 )
 
-Write-Host "Поиск локальных образов..." -ForegroundColor Blue
+Write-Host "Searching for local images..." -ForegroundColor Blue
 Write-Host ""
 
 # Собираем образы если они еще не собраны
-Write-Host "Сборка образов из docker-compose.prod.yml..." -ForegroundColor Blue
-docker compose -f docker-compose.prod.yml build --quiet
+Write-Host "Building images from docker-compose.prod.yml..." -ForegroundColor Blue
+docker compose -f docker-compose.prod.yml build
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "Warning: Build completed with errors. Continuing anyway..." -ForegroundColor Yellow
+}
 
 Write-Host ""
-Write-Host "Экспорт образов..." -ForegroundColor Blue
+Write-Host "Exporting images..." -ForegroundColor Blue
 Write-Host ""
 
 $EXPORTED_FILES = @()
 
 foreach ($IMAGE in $IMAGES) {
-    # Проверяем существует ли образ
-    $imageExists = docker image inspect $IMAGE 2>$null
+    # Проверяем существует ли образ (подавляем ошибки)
+    $null = docker image inspect $IMAGE 2>&1 | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "✓ Найден образ: $IMAGE" -ForegroundColor Green
+        Write-Host "Found image: $IMAGE" -ForegroundColor Green
         
         # Создаем имя файла из имени образа
         $FILENAME = $IMAGE -replace '[/:]', '_'
         $EXPORT_FILE = Join-Path $EXPORT_DIR "$FILENAME.tar"
         
-        Write-Host "  Экспорт в: $EXPORT_FILE"
+        Write-Host "  Exporting to: $EXPORT_FILE"
         docker save $IMAGE -o $EXPORT_FILE
         
         if ($LASTEXITCODE -eq 0) {
             # Сжимаем файл (используем 7zip или gzip если доступен)
-            Write-Host "  Сжатие..."
+            Write-Host "  Compressing..."
             
             # Пробуем использовать gzip через WSL или Git Bash
             $gzipAvailable = Get-Command gzip -ErrorAction SilentlyContinue
@@ -70,11 +74,11 @@ foreach ($IMAGE in $IMAGES) {
             $EXPORTED_FILES += $EXPORT_FILE
             
             $FILE_SIZE = (Get-Item $EXPORT_FILE).Length / 1MB
-            Write-Host "  ✓ Готово! Размер: $([math]::Round($FILE_SIZE, 2)) MB" -ForegroundColor Green
+            Write-Host "  OK! Size: $([math]::Round($FILE_SIZE, 2)) MB" -ForegroundColor Green
             Write-Host ""
         }
     } else {
-        Write-Host "⚠ Образ не найден: $IMAGE (пропускаем)" -ForegroundColor Yellow
+        Write-Host "Image not found: $IMAGE (skipping)" -ForegroundColor Yellow
         Write-Host ""
     }
 }
