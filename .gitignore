@@ -50,6 +50,9 @@ server_config.md
 *.server-config.md
 server-*.md
 
+# Server info and responses (не синхронизируется с git)
+server-info/
+
 # Cursor AI files (optional - можно оставить или удалить)
 .agent/
 .cursor/
