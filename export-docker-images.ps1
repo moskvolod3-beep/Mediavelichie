@@ -188,19 +188,20 @@ Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "Экспорт завершен!" -ForegroundColor Green
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host ""
-Write-Host "Экспортированные файлы:" -ForegroundColor Blue
+Write-Host "Exported files:" -ForegroundColor Blue
 $EXPORTED_FILES | ForEach-Object {
     $FILE_SIZE = [math]::Round((Get-Item $_).Length / 1MB, 2)
-    Write-Host "  - $(Split-Path $_ -Leaf) ($FILE_SIZE MB)"
+    $FILENAME = Split-Path $_ -Leaf
+    Write-Host "  - $FILENAME ($FILE_SIZE MB)"
 }
 
 $TOTAL_SIZE = [math]::Round((Get-ChildItem $EXPORT_DIR -Recurse | Measure-Object -Property Length -Sum).Sum / 1MB, 2)
 Write-Host ""
-Write-Host "Общий размер: $TOTAL_SIZE MB" -ForegroundColor Blue
+Write-Host "Total size: $TOTAL_SIZE MB" -ForegroundColor Blue
 Write-Host ""
-Write-Host "Директория экспорта: $EXPORT_DIR" -ForegroundColor Blue
+Write-Host "Export directory: $EXPORT_DIR" -ForegroundColor Blue
 Write-Host ""
-Write-Host "Следующие шаги:"
-Write-Host "  1. Передайте содержимое директории '$EXPORT_DIR' на сервер"
-Write-Host "  2. На сервере выполните: cd /opt/mediavelichia/docker-images-import && ./import-images.sh"
+Write-Host "Next steps:"
+Write-Host "  1. Transfer contents of '$EXPORT_DIR' directory to server"
+Write-Host "  2. On server run: cd /opt/mediavelichia/docker-images-import && ./import-images.sh"
 Write-Host ""
