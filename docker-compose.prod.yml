@@ -78,6 +78,34 @@ services:
       start_period: 30s
 
   # ============================================
+  # Supabase pg-meta: Метаданные для Studio
+  # Предоставляет API для работы со схемой БД
+  # ============================================
+  supabase-meta:
+    image: supabase/postgres-meta:v0.91.0
+    container_name: mediavelichie-supabase-meta
+    environment:
+      PG_META_PORT: 8080
+      PG_META_DB_HOST: supabase
+      PG_META_DB_PORT: 5432
+      PG_META_DB_NAME: postgres
+      # Используем postgres пользователя (supabase_admin может не существовать)
+      PG_META_DB_USER: postgres
+      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+    depends_on:
+      supabase:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/health || exit 0"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  # ============================================
   # Supabase Studio: Веб-интерфейс для управления БД
   # Доступен через браузер: http://localhost:3000
   # ============================================
@@ -87,23 +115,20 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # Подключение к базе данных напрямую
-      # Используем имя сервиса для подключения внутри Docker сети
-      POSTGRES_HOST: supabase
-      POSTGRES_PORT: 5432
-      POSTGRES_DB: postgres
-      POSTGRES_USER: postgres
+      # Используем pg-meta для автоматического подключения к БД
+      STUDIO_PG_META_URL: http://supabase-meta:8080
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
       # Дополнительные переменные для Supabase Studio
-      DEFAULT_ORGANIZATION_NAME: default
-      DEFAULT_PROJECT_NAME: default
-      SUPABASE_URL: http://supabase:5432
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
-      # Альтернативно можно использовать pg-meta для полного функционала
-      # STUDIO_PG_META_URL: http://supabase-meta:8080
+      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION:-default}
+      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT:-default}
+      # Если используете облачный Supabase, раскомментируйте:
+      # SUPABASE_URL: ${SUPABASE_URL}
+      # SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
+      # SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
     depends_on:
       supabase:
+        condition: service_healthy
+      supabase-meta:
         condition: service_healthy
     restart: unless-stopped
     networks:
