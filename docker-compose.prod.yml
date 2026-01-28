@@ -123,10 +123,14 @@ services:
       # Дополнительные переменные для Supabase Studio
       DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION:-default}
       DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT:-default}
-      # Если используете облачный Supabase, раскомментируйте:
-      # SUPABASE_URL: ${SUPABASE_URL}
-      # SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
-      # SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY}
+      # Отключаем функции, требующие полного Supabase стека
+      # Используем фиктивные URL чтобы Studio не пытался подключаться к несуществующим сервисам
+      SUPABASE_URL: http://localhost:8000
+      SUPABASE_PUBLIC_URL: http://localhost:8000
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
+      # Отключаем функции Storage (если Studio поддерживает)
+      DISABLE_STORAGE: "true"
     depends_on:
       supabase:
         condition: service_healthy
