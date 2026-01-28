@@ -1,12 +1,33 @@
 # Исправление проблем на сервере
 
-## Проблема 1: Синтаксическая ошибка в import-images.sh
+## Проблема 1: unzip: command not found
+
+**Ошибка:** `./rebuild-images-on-server.sh: line 70: unzip: command not found`
+
+**Причина:** На сервере не установлен пакет `unzip`, который нужен для распаковки `.zip` файлов.
+
+**Решение:** Скрипт `rebuild-images-on-server.sh` теперь автоматически устанавливает `unzip`, но вы можете установить его вручную:
+
+```bash
+# Debian/Ubuntu
+apt-get update && apt-get install -y unzip
+
+# CentOS/RHEL
+yum install -y unzip
+
+# Alpine
+apk add unzip
+```
+
+**Альтернатива:** Используйте экспорт в формате `.tar.gz` вместо `.zip`. Скрипт `export-docker-images.ps1` теперь предпочитает gzip.
+
+## Проблема 2: Синтаксическая ошибка в import-images.sh
 
 **Ошибка:** `./import-images.sh: line 20: syntax error near unexpected token '2'`
 
 **Решение:** Скрипт `import-images.sh` будет автоматически исправлен при следующем экспорте образов. Но вы можете использовать более надежный скрипт `rebuild-images-on-server.sh`.
 
-## Проблема 2: Git remote 'github' не найден
+## Проблема 3: Git remote 'github' не найден
 
 **Ошибка:** `fatal: 'github' does not appear to be a git repository`
 
@@ -37,13 +58,16 @@ chmod +x fix-git-remote.sh
 ## Быстрое решение (все сразу)
 
 ```bash
-# 1. Исправить Git remote
+# 1. Установить unzip (если еще не установлен)
+apt-get update && apt-get install -y unzip
+
+# 2. Исправить Git remote
 cd /opt/mediavelichia
 git pull origin main 2>/dev/null || git fetch origin
 chmod +x fix-git-remote.sh
 ./fix-git-remote.sh
 
-# 2. Использовать rebuild-images-on-server.sh вместо import-images.sh
+# 3. Использовать rebuild-images-on-server.sh (автоматически установит unzip если нужно)
 chmod +x rebuild-images-on-server.sh
 ./rebuild-images-on-server.sh
 ```
