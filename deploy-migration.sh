@@ -96,7 +96,7 @@ if [ "$CONFIRM" = "true" ]; then
     REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
     
     # Проверяем ответ
-    if [ -z "$REPLY" ] || [ "$REPLY" != "y" ] && [ "$REPLY" != "yes" ]; then
+    if [ -z "$REPLY" ] || ([ "$REPLY" != "y" ] && [ "$REPLY" != "yes" ]); then
         echo "Отменено"
         exit 0
     fi
