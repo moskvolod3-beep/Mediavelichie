@@ -3,9 +3,9 @@
 # 
 # Использование:
 # docker compose -f docker-compose.prod.cloud.yml up -d --build
-
-env_file:
-  - .env
+#
+# Переменные окружения автоматически загружаются из .env файла
+# при использовании синтаксиса ${VARIABLE}
 
 services:
   # ============================================
