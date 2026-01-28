@@ -45,6 +45,11 @@ build/
 .env.local
 .env.*.local
 
+# Server configuration (contains sensitive data)
+server_config.md
+*.server-config.md
+server-*.md
+
 # Cursor AI files (optional - можно оставить или удалить)
 .agent/
 .cursor/

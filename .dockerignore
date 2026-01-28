@@ -33,10 +33,9 @@ desktop.ini
 .env.*.local
 
 # Docker
-docker-compose.yml
-docker-compose.*.yml
-Dockerfile
-.dockerignore
+# НЕ исключаем Dockerfile и docker-compose файлы - они нужны для сборки
+# docker-compose.yml - можно исключить для продакшена, но лучше оставить
+# Dockerfile - ОБЯЗАТЕЛЬНО нужен для сборки
 
 # Cursor AI
 .agent

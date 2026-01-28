@@ -1,0 +1,74 @@
+# Production Docker Compose для использования с ОБЛАЧНЫМ Supabase
+# Используйте этот файл, если используете облачный Supabase (рекомендуется)
+# 
+# Использование:
+# docker compose -f docker-compose.prod.cloud.yml up -d --build
+
+env_file:
+  - .env
+
+services:
+  # ============================================
+  # Frontend: Веб-сервер для статического сайта
+  # ============================================
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        SUPABASE_URL: ${SUPABASE_URL:-}
+        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+    container_name: mediavelichie-web
+    ports:
+      - "80:80"
+      - "443:443"
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    # Для продакшена: раскомментируйте для SSL
+    # volumes:
+    #   - ./ssl:/etc/nginx/ssl:ro
+    #   - ./frontend/nginx.ssl.conf:/etc/nginx/conf.d/default.conf:ro
+
+  # ============================================
+  # Editor: Flask сервер для обработки видео
+  # ============================================
+  editor:
+    build:
+      context: ./backend/service1
+      dockerfile: Dockerfile
+    container_name: mediavelichie-editor
+    ports:
+      - "5000:5000"
+    environment:
+      - FLASK_ENV=production
+      # Используем облачный Supabase из .env
+      - SUPABASE_URL=${SUPABASE_URL}
+      - SUPABASE_KEY=${SUPABASE_SERVICE_KEY:-}
+      - SUPABASE_BUCKET=${SUPABASE_BUCKET:-portfolio}
+    volumes:
+      # Используем именованный volume для временных файлов
+      - editor-temp-data:/app/temp
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"] || exit 0
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  editor-temp-data:
+    driver: local
+
+networks:
+  mediavelichie-network:
+    driver: bridge

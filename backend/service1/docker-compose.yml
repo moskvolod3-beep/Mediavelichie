@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   editor:
     build:
@@ -17,9 +15,14 @@ services:
       - "host.docker.internal:host-gateway"
     volumes:
       # Монтируем код для разработки (hot reload)
-      - ./app.py:/app/app.py
+      # Монтируем всю директорию, но исключаем temp и другие служебные папки
+      - .:/app
       # Используем именованный volume для temp, чтобы избежать проблем с монтированием файла
+      # и чтобы временные файлы не попадали на хост
       - temp-data:/app/temp
+      # Исключаем node_modules и другие служебные папки, если они есть
+      - /app/__pycache__
+      - /app/.pytest_cache
     restart: unless-stopped
     # Для локального Supabase на хосте не нужна сеть
     # networks:
