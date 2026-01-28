@@ -57,20 +57,23 @@ echo ""
 
 # Заменяем URL в config.js
 docker exec "$CONTAINER_NAME" sh -c "
-    # Заменяем в config.js (все варианты)
-    sed -i \"s|url: 'http://194\.58\.88\.127:5432'|url: '${SUPABASE_URL}'|g\" /usr/share/nginx/html/supabase/config.js && \
-    sed -i \"s|url: \\\"http://194\.58\.88\.127:5432\\\"|url: \\\"${SUPABASE_URL}\\\"|g\" /usr/share/nginx/html/supabase/config.js && \
+    # Заменяем в config.js (все варианты включая плейсхолдеры)
+    sed -i \"s|url: '.*'|url: '${SUPABASE_URL}'|g\" /usr/share/nginx/html/supabase/config.js && \
+    sed -i \"s|url: \\\".*\\\"|url: \\\"${SUPABASE_URL}\\\"|g\" /usr/share/nginx/html/supabase/config.js && \
     sed -i \"s|http://194\.58\.88\.127:5432|${SUPABASE_URL}|g\" /usr/share/nginx/html/supabase/config.js && \
     sed -i \"s|http://127\.0\.0\.1:54321|${SUPABASE_URL}|g\" /usr/share/nginx/html/supabase/config.js && \
     sed -i \"s|http://localhost:54321|${SUPABASE_URL}|g\" /usr/share/nginx/html/supabase/config.js && \
+    sed -i \"s|https://your-project-id\.supabase\.co|${SUPABASE_URL}|g\" /usr/share/nginx/html/supabase/config.js && \
     # Заменяем в HTML файлах
     find /usr/share/nginx/html -name '*.html' -type f -exec sed -i \"s|http://194\.58\.88\.127:5432|${SUPABASE_URL}|g\" {} \; && \
     find /usr/share/nginx/html -name '*.html' -type f -exec sed -i \"s|http://127\.0\.0\.1:54321|${SUPABASE_URL}|g\" {} \; && \
     find /usr/share/nginx/html -name '*.html' -type f -exec sed -i \"s|http://localhost:54321|${SUPABASE_URL}|g\" {} \; && \
+    find /usr/share/nginx/html -name '*.html' -type f -exec sed -i \"s|https://your-project-id\.supabase\.co|${SUPABASE_URL}|g\" {} \; && \
     # Заменяем в JS файлах
     find /usr/share/nginx/html -name '*.js' -type f -exec sed -i \"s|http://194\.58\.88\.127:5432|${SUPABASE_URL}|g\" {} \; && \
     find /usr/share/nginx/html -name '*.js' -type f -exec sed -i \"s|http://127\.0\.0\.1:54321|${SUPABASE_URL}|g\" {} \; && \
-    find /usr/share/nginx/html -name '*.js' -type f -exec sed -i \"s|http://localhost:54321|${SUPABASE_URL}|g\" {} \;
+    find /usr/share/nginx/html -name '*.js' -type f -exec sed -i \"s|http://localhost:54321|${SUPABASE_URL}|g\" {} \; && \
+    find /usr/share/nginx/html -name '*.js' -type f -exec sed -i \"s|https://your-project-id\.supabase\.co|${SUPABASE_URL}|g\" {} \;
 "
 
 if [ $? -eq 0 ]; then
