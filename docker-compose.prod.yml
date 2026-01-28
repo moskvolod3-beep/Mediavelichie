@@ -89,9 +89,11 @@ services:
       PG_META_DB_HOST: supabase
       PG_META_DB_PORT: 5432
       PG_META_DB_NAME: postgres
-      # Используем postgres пользователя (supabase_admin может не существовать)
+      # Используем postgres пользователя (supabase_admin может не существовать в standalone режиме)
       PG_META_DB_USER: postgres
       PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+      # Дополнительные настройки для работы с обычным PostgreSQL
+      PG_META_DB_SSL: "false"
     depends_on:
       supabase:
         condition: service_healthy
