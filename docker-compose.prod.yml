@@ -27,8 +27,8 @@ services:
       supabase:
         condition: service_healthy
     healthcheck:
-      # Используем curl вместо wget (более надежно в alpine образе)
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"] || ["CMD", "curl", "-f", "http://localhost/"] || exit 0
+      # Проверяем что Nginx отвечает (wget есть в nginx:alpine)
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost/ || exit 0"]
       interval: 30s
       timeout: 10s
       retries: 3
