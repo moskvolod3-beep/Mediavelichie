@@ -88,12 +88,18 @@ services:
       - "3000:3000"
     environment:
       # Подключение к базе данных напрямую
-      # Studio будет работать в упрощенном режиме без pg-meta
+      # Используем имя сервиса для подключения внутри Docker сети
       POSTGRES_HOST: supabase
       POSTGRES_PORT: 5432
       POSTGRES_DB: postgres
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+      # Дополнительные переменные для Supabase Studio
+      DEFAULT_ORGANIZATION_NAME: default
+      DEFAULT_PROJECT_NAME: default
+      SUPABASE_URL: http://supabase:5432
+      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
       # Альтернативно можно использовать pg-meta для полного функционала
       # STUDIO_PG_META_URL: http://supabase-meta:8080
     depends_on:
