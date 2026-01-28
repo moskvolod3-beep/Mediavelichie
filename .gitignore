@@ -61,3 +61,10 @@ docker-images-export/
 # Cursor AI files (optional - можно оставить или удалить)
 .agent/
 .cursor/
+
+# SSH scripts with passwords (security)
+setup-ssh-keys.sh
+setup-ssh-tunnel.sh
+setup-ssh-keys.ps1
+connect-server.ps1
+ssh-config
