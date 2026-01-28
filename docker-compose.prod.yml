@@ -1,9 +1,8 @@
 # Production Docker Compose конфигурация для Mediavelichia
 # Содержит: Frontend (Nginx), Supabase (PostgreSQL), Editor (Flask)
-
-# Загружаем переменные окружения из .env файла
-env_file:
-  - .env
+#
+# Переменные окружения автоматически загружаются из .env файла
+# при использовании синтаксиса ${VARIABLE}
 
 services:
   # ============================================
