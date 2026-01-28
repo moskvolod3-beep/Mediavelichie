@@ -86,7 +86,9 @@ services:
     container_name: mediavelichie-supabase-meta
     environment:
       PG_META_PORT: 8080
-      # ВАЖНО: Используем имя сервиса из docker-compose, не 'db'
+      # ВАЖНО: pg-meta может использовать POSTGRES_HOST вместо PG_META_DB_HOST
+      # Указываем оба варианта для совместимости
+      POSTGRES_HOST: supabase
       PG_META_DB_HOST: supabase
       PG_META_DB_PORT: 5432
       PG_META_DB_NAME: postgres
