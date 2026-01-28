@@ -1,0 +1,60 @@
+# Упрощенная конфигурация без pg-meta
+# Studio подключается к БД напрямую через веб-интерфейс
+
+services:
+  # ============================================
+  # Supabase: База данных PostgreSQL
+  # ============================================
+  supabase:
+    image: supabase/postgres:15.1.0.117
+    container_name: mediavelichie-supabase-db
+    environment:
+      POSTGRES_HOST: /var/run/postgresql
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - supabase-db-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # ============================================
+  # Supabase Studio: Упрощенная версия БЕЗ pg-meta
+  # Использует старую проверенную версию
+  # ============================================
+  supabase-studio:
+    image: supabase/studio:20231220-0a8c4b5
+    container_name: mediavelichie-supabase-studio
+    ports:
+      - "3000:3000"
+    environment:
+      # НЕ используем STUDIO_PG_META_URL - Studio попросит подключиться вручную
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+    depends_on:
+      supabase:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/ || exit 0"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+volumes:
+  supabase-db-data:
+    driver: local
+
+networks:
+  mediavelichie-network:
+    driver: bridge
