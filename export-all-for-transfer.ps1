@@ -242,101 +242,137 @@ Write-Host ""
 
 # Скрипт для импорта образов
 $IMPORT_IMAGES_SCRIPT = Join-Path $EXPORT_DIR "import-images.sh"
-@"
+$imagesScriptContent = @'
 #!/bin/bash
 # Скрипт для импорта Docker образов на сервере
 
 set -e
 
-SCRIPT_DIR="`$(cd "`$(dirname "`${BASH_SOURCE[0]}")" && pwd)"
-cd "`${SCRIPT_DIR}/images"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}/images"
 
 shopt -s nullglob
 
 for FILE in *.tar.gz *.tar.zip *.tar; do
-    if [ -f "`$FILE" ]; then
-        echo "Importing: `$FILE"
-        if [[ "`$FILE" == *.gz ]]; then
-            gunzip -c "`$FILE" | docker load
-        elif [[ "`$FILE" == *.zip ]]; then
-            unzip -p "`$FILE" | docker load
+    if [ -f "$FILE" ]; then
+        echo "Importing: $FILE"
+        if [[ "$FILE" == *.gz ]]; then
+            gunzip -c "$FILE" | docker load
+        elif [[ "$FILE" == *.zip ]]; then
+            unzip -p "$FILE" | docker load
         else
-            docker load -i "`$FILE"
+            docker load -i "$FILE"
         fi
-        echo "OK: `$FILE"
+        echo "OK: $FILE"
     fi
 done
 
 echo "Images imported!"
-"@ | Out-File -FilePath $IMPORT_IMAGES_SCRIPT -Encoding UTF8
+'@
+[System.IO.File]::WriteAllText($IMPORT_IMAGES_SCRIPT, $imagesScriptContent, [System.Text.UTF8Encoding]::new($false))
 
 # Скрипт для импорта БД
 $IMPORT_DB_SCRIPT = Join-Path $EXPORT_DIR "import-database.sh"
-@"
+$dbScriptContent = @"
 #!/bin/bash
 # Скрипт для импорта базы данных на сервере
 
 set -e
 
-SCRIPT_DIR="`$(cd "`$(dirname "`${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="`$(cd "`$(dirname "`${BASH_SOURCE[0]}")" `&`& pwd)"
 cd "`${SCRIPT_DIR}/database"
 
-# Находим файл бэкапа
-BACKUP_FILE=`$(ls -t *.sql.gz *.sql.zip *.sql 2>/dev/null | head -1)
+# Проверяем что контейнер запущен
+CONTAINER_NAME="mediavelichie-supabase-db"
+if ! docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Error: Container ${CONTAINER_NAME} is not running!"
+    echo "Please start it first with:"
+    echo "  cd /opt/mediavelichia"
+    echo "  docker compose -f docker-compose.prod.yml up -d supabase"
+    echo ""
+    echo "Wait for container to be healthy, then run this script again."
+    exit 1
+fi
 
-if [ -z "`$BACKUP_FILE" ]; then
+# Находим файл бэкапа
+BACKUP_FILE=$(ls -t *.sql.gz *.sql.zip *.sql 2>/dev/null | head -1)
+
+if [ -z "$BACKUP_FILE" ]; then
     echo "Error: No database backup file found"
     exit 1
 fi
 
-echo "Importing database from: `$BACKUP_FILE"
+echo "Importing database from: $BACKUP_FILE"
+echo "This may take a while..."
 
 # Распаковываем если нужно
-if [[ "`$BACKUP_FILE" == *.gz ]]; then
-    gunzip -c "`$BACKUP_FILE" | docker exec -i mediavelichie-supabase-db psql -U postgres
-elif [[ "`$BACKUP_FILE" == *.zip ]]; then
-    unzip -p "`$BACKUP_FILE" | docker exec -i mediavelichie-supabase-db psql -U postgres
+if [[ "$BACKUP_FILE" == *.gz ]]; then
+    gunzip -c "$BACKUP_FILE" | docker exec -i ${CONTAINER_NAME} psql -U postgres
+elif [[ "$BACKUP_FILE" == *.zip ]]; then
+    unzip -p "$BACKUP_FILE" | docker exec -i ${CONTAINER_NAME} psql -U postgres
 else
-    docker exec -i mediavelichie-supabase-db psql -U postgres < "`$BACKUP_FILE"
+    docker exec -i ${CONTAINER_NAME} psql -U postgres < "$BACKUP_FILE"
 fi
 
-echo "Database imported!"
-"@ | Out-File -FilePath $IMPORT_DB_SCRIPT -Encoding UTF8
+echo "Database imported successfully!"
+"@
+# Используем UTF8NoBOM для правильной кодировки
+[System.IO.File]::WriteAllText($IMPORT_DB_SCRIPT, $dbScriptContent, [System.Text.UTF8Encoding]::new($false))
 
 # Скрипт для импорта Storage
 $IMPORT_STORAGE_SCRIPT = Join-Path $EXPORT_DIR "import-storage.sh"
-@"
+$storageScriptContent = @'
 #!/bin/bash
 # Скрипт для импорта Storage данных на сервере
 
 set -e
 
-SCRIPT_DIR="`$(cd "`$(dirname "`${BASH_SOURCE[0]}")" && pwd)"
-cd "`${SCRIPT_DIR}/storage"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${SCRIPT_DIR}/storage"
 
-STORAGE_VOLUME="mediavelichie_supabase-db-data"
-BACKUP_FILE=`$(ls -t storage_backup_*.tar.gz storage_backup_*.tar 2>/dev/null | head -1)
+# Ищем все backup файлы Storage
+BACKUP_FILES=$(ls -t *_backup_*.tar.gz *_backup_*.tar 2>/dev/null | head -5)
 
-if [ -z "`$BACKUP_FILE" ]; then
-    echo "Warning: No storage backup file found. Skipping storage import."
+if [ -z "$BACKUP_FILES" ]; then
+    echo "Warning: No storage backup files found. Skipping storage import."
     exit 0
 fi
 
-echo "Importing storage from: `$BACKUP_FILE"
-
-# Создаем временный контейнер для импорта
-if [[ "`$BACKUP_FILE" == *.gz ]]; then
-    gunzip -c "`$BACKUP_FILE" | docker run --rm -i -v "`${STORAGE_VOLUME}:/data" alpine tar xzf - -C /data
-else
-    docker run --rm -i -v "`${STORAGE_VOLUME}:/data" -v "`$(pwd):/backup" alpine tar xf /backup/`$BACKUP_FILE -C /data
-fi
+for BACKUP_FILE in $BACKUP_FILES; do
+    if [ ! -f "$BACKUP_FILE" ]; then
+        continue
+    fi
+    
+    # Определяем имя volume из имени файла
+    # Формат: volume_name_backup_timestamp.tar.gz
+    VOLUME_NAME=$(echo "$BACKUP_FILE" | sed 's/_backup_.*//' | sed 's/_/-/g')
+    
+    # Проверяем существует ли volume
+    if ! docker volume ls --format "{{.Name}}" | grep -q "^${VOLUME_NAME}$"; then
+        echo "Warning: Volume ${VOLUME_NAME} not found. Creating it..."
+        docker volume create ${VOLUME_NAME} || true
+    fi
+    
+    echo "Importing storage from: $BACKUP_FILE to volume: ${VOLUME_NAME}"
+    echo "This may take a while..."
+    
+    # Создаем временный контейнер для импорта
+    if [[ "$BACKUP_FILE" == *.gz ]]; then
+        gunzip -c "$BACKUP_FILE" | docker run --rm -i -v "${VOLUME_NAME}:/data" alpine tar xzf - -C /data
+    else
+        docker run --rm -i -v "${VOLUME_NAME}:/data" -v "$(pwd):/backup" alpine tar xf /backup/$BACKUP_FILE -C /data
+    fi
+    
+    echo "OK: $BACKUP_FILE imported to ${VOLUME_NAME}"
+done
 
 echo "Storage imported!"
-"@ | Out-File -FilePath $IMPORT_STORAGE_SCRIPT -Encoding UTF8
+'@
+[System.IO.File]::WriteAllText($IMPORT_STORAGE_SCRIPT, $storageScriptContent, [System.Text.UTF8Encoding]::new($false))
 
 # Главный скрипт импорта
 $MAIN_IMPORT_SCRIPT = Join-Path $EXPORT_DIR "import-all.sh"
-@"
+$mainScriptContent = @'
 #!/bin/bash
 # Главный скрипт для импорта всего на сервере
 
@@ -354,15 +390,40 @@ chmod +x import-images.sh
 
 echo ""
 
+# Проверяем что контейнеры запущены перед импортом БД
+echo "Step 2: Checking containers..."
+CONTAINER_NAME="mediavelichie-supabase-db"
+if ! docker ps --format "{{.Names}}" | grep -q "^${CONTAINER_NAME}$"; then
+    echo "Container ${CONTAINER_NAME} is not running."
+    echo "Starting containers..."
+    cd /opt/mediavelichia
+    docker compose -f docker-compose.prod.yml up -d supabase
+    echo "Waiting for container to be healthy (30 seconds)..."
+    sleep 30
+    
+    # Проверяем health
+    for i in {1..30}; do
+        if docker inspect ${CONTAINER_NAME} --format='{{.State.Health.Status}}' 2>/dev/null | grep -q "healthy"; then
+            echo "Container is healthy!"
+            break
+        fi
+        echo "Waiting... ($i/30)"
+        sleep 2
+    done
+    
+    cd - > /dev/null
+fi
+
 # Импорт БД
-echo "Step 2: Importing database..."
+echo ""
+echo "Step 3: Importing database..."
 chmod +x import-database.sh
 ./import-database.sh
 
 echo ""
 
 # Импорт Storage
-echo "Step 3: Importing storage..."
+echo "Step 4: Importing storage..."
 chmod +x import-storage.sh
 ./import-storage.sh || echo "Storage import skipped (no backup file)"
 
@@ -370,7 +431,13 @@ echo ""
 echo "=========================================="
 echo "Import completed!"
 echo "=========================================="
-"@ | Out-File -FilePath $MAIN_IMPORT_SCRIPT -Encoding UTF8
+echo ""
+echo "Next steps:"
+echo "  1. Start all containers: cd /opt/mediavelichia && docker compose -f docker-compose.prod.yml up -d"
+echo "  2. Check status: docker ps --filter 'name=mediavelichie'"
+echo "  3. Verify website: curl http://localhost"
+'@
+[System.IO.File]::WriteAllText($MAIN_IMPORT_SCRIPT, $mainScriptContent, [System.Text.UTF8Encoding]::new($false))
 
 Write-Host "Created import scripts:" -ForegroundColor Green
 Write-Host "  - import-all.sh (main script)"
