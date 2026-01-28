@@ -48,7 +48,8 @@ echo ""
 IMPORTED_COUNT=0
 
 # Импорт .tar.gz файлов
-for FILE in *.tar.gz 2>/dev/null; do
+shopt -s nullglob
+for FILE in *.tar.gz; do
     if [ -f "$FILE" ]; then
         echo -e "${YELLOW}Importing:${NC} $FILE"
         gunzip -c "$FILE" | docker load
@@ -63,7 +64,7 @@ for FILE in *.tar.gz 2>/dev/null; do
 done
 
 # Импорт .tar.zip файлов
-for FILE in *.tar.zip 2>/dev/null; do
+for FILE in *.tar.zip; do
     if [ -f "$FILE" ]; then
         echo -e "${YELLOW}Importing:${NC} $FILE"
         unzip -p "$FILE" | docker load
@@ -78,7 +79,7 @@ for FILE in *.tar.zip 2>/dev/null; do
 done
 
 # Импорт .tar файлов (без сжатия)
-for FILE in *.tar 2>/dev/null; do
+for FILE in *.tar; do
     # Пропускаем .tar.gz и .tar.zip (уже обработаны)
     if [[ "$FILE" != *.gz ]] && [[ "$FILE" != *.zip ]]; then
         if [ -f "$FILE" ]; then
@@ -94,6 +95,7 @@ for FILE in *.tar 2>/dev/null; do
         fi
     fi
 done
+shopt -u nullglob
 
 if [ $IMPORTED_COUNT -eq 0 ]; then
     echo -e "${YELLOW}Warning: No image files found in $IMPORT_DIR${NC}"

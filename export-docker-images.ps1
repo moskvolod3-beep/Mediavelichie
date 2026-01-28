@@ -101,33 +101,61 @@ BLUE='\033[0;34m'
 NC='\033[0m'
 
 echo "=========================================="
-echo "Импорт Docker образов"
+echo "Importing Docker Images"
 echo "=========================================="
 echo ""
 
-# Импортируем все .tar.gz и .tar.zip файлы
-for FILE in *.tar.gz *.tar.zip 2>/dev/null; do
+# Импортируем все .tar.gz файлы
+for FILE in *.tar.gz; do
     if [ -f "\$FILE" ]; then
-        echo -e "\${BLUE}Импорт:\${NC} \$FILE"
-        
-        # Распаковываем и импортируем
-        if [[ "\$FILE" == *.gz ]]; then
-            gunzip -c "\$FILE" | docker load
-        elif [[ "\$FILE" == *.zip ]]; then
-            unzip -p "\$FILE" | docker load
+        echo -e "\${BLUE}Importing:\${NC} \$FILE"
+        gunzip -c "\$FILE" | docker load
+        if [ \$? -eq 0 ]; then
+            echo -e "\${GREEN}✓\${NC} Image imported: \$FILE"
+        else
+            echo -e "\${RED}✗\${NC} Failed to import: \$FILE"
         fi
-        
-        echo -e "\${GREEN}✓\${NC} Образ импортирован: \$FILE"
         echo ""
     fi
-done
+done 2>/dev/null || true
+
+# Импортируем все .tar.zip файлы
+for FILE in *.tar.zip; do
+    if [ -f "\$FILE" ]; then
+        echo -e "\${BLUE}Importing:\${NC} \$FILE"
+        unzip -p "\$FILE" | docker load
+        if [ \$? -eq 0 ]; then
+            echo -e "\${GREEN}✓\${NC} Image imported: \$FILE"
+        else
+            echo -e "\${RED}✗\${NC} Failed to import: \$FILE"
+        fi
+        echo ""
+    fi
+done 2>/dev/null || true
+
+# Импортируем все .tar файлы (без сжатия)
+for FILE in *.tar; do
+    # Пропускаем .tar.gz и .tar.zip (уже обработаны)
+    if [[ "\$FILE" != *.gz ]] && [[ "\$FILE" != *.zip ]]; then
+        if [ -f "\$FILE" ]; then
+            echo -e "\${BLUE}Importing:\${NC} \$FILE"
+            docker load -i "\$FILE"
+            if [ \$? -eq 0 ]; then
+                echo -e "\${GREEN}✓\${NC} Image imported: \$FILE"
+            else
+                echo -e "\${RED}✗\${NC} Failed to import: \$FILE"
+            fi
+            echo ""
+        fi
+    fi
+done 2>/dev/null || true
 
 echo "=========================================="
-echo -e "\${GREEN}Импорт завершен!\${NC}"
+echo -e "\${GREEN}Import completed!\${NC}"
 echo "=========================================="
 echo ""
-echo "Проверка импортированных образов:"
-docker images | grep -E "mediavelichie|supabase" || echo "Образы не найдены"
+echo "Checking imported images:"
+docker images | grep -E "mediavelichia|REPOSITORY" || echo "No custom images found"
 "@ | Out-File -FilePath $IMPORT_SCRIPT -Encoding UTF8
 
 # Создаем README с инструкциями
