@@ -76,6 +76,32 @@ services:
       start_period: 30s
 
   # ============================================
+  # Supabase Studio: Веб-интерфейс для управления БД
+  # Доступен через браузер: http://localhost:3000
+  # ============================================
+  supabase-studio:
+    image: supabase/studio:latest
+    container_name: mediavelichie-supabase-studio
+    ports:
+      - "3000:3000"
+    environment:
+      # Подключение к базе данных напрямую
+      # Studio будет работать в упрощенном режиме без pg-meta
+      POSTGRES_HOST: supabase
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+      # Альтернативно можно использовать pg-meta для полного функционала
+      # STUDIO_PG_META_URL: http://supabase-meta:8080
+    depends_on:
+      supabase:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - mediavelichie-network
+
+  # ============================================
   # Editor: Flask сервер для обработки видео
   # ============================================
   editor:
