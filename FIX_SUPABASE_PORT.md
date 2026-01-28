@@ -7,21 +7,52 @@
 SUPABASE_URL=http://194.58.88.127:5432
 ```
 
-Порт `5432` - это порт PostgreSQL базы данных, а не Supabase API.
+**Проблемы:**
+1. Порт `5432` - это порт PostgreSQL базы данных, а не Supabase API
+2. В `docker-compose.prod.yml` нет полного Supabase стека с API (только PostgreSQL и Studio)
+3. Для работы Storage API и REST API нужен порт `54321` или облачный Supabase
 
 ## Решение
 
 ### Для локального Supabase на сервере
 
-Если вы используете локальный Supabase контейнер, правильный URL должен быть:
+⚠️ **Важно:** В текущем `docker-compose.prod.yml` нет полного Supabase стека с API!
 
+Текущая конфигурация содержит только:
+- PostgreSQL базу данных (порт 5432)
+- Supabase Studio (порт 3000)
+
+**Но нет:**
+- Kong Gateway (для REST API на порту 54321)
+- PostgREST (для REST API)
+- Storage API
+
+**Варианты решения:**
+
+#### Вариант 1: Использовать облачный Supabase (РЕКОМЕНДУЕТСЯ)
+
+```
+SUPABASE_URL=https://your-project-id.supabase.co
+```
+
+Это самый простой и надежный вариант для продакшена.
+
+#### Вариант 2: Настроить полный локальный Supabase стек
+
+Если нужен локальный Supabase, нужно добавить полный стек в `docker-compose.prod.yml`:
+- Kong Gateway (порт 54321)
+- PostgREST
+- Storage API
+- GoTrue (Auth)
+
+Тогда URL будет:
 ```
 SUPABASE_URL=http://194.58.88.127:54321
 ```
 
-**Порты Supabase:**
-- `5432` - PostgreSQL база данных (внутренний доступ)
-- `54321` - Supabase Studio и REST API (внешний доступ)
+**Порты полного Supabase стека:**
+- `5432` - PostgreSQL база данных
+- `54321` - Kong Gateway (REST API, Storage API, Auth API)
 - `3000` - Supabase Studio веб-интерфейс
 
 ### Для облачного Supabase (рекомендуется)
