@@ -2,22 +2,35 @@
 
 ## Проблемы и решения
 
-### Проблема 1: Git pull не работает
+### Проблема 1: Git pull не работает из-за конфликта локальных изменений
 
-На сервере remote может называться не "github", а "origin". Проверьте:
+**Ошибка:** `error: Your local changes to the following files would be overwritten by merge`
 
+**Решение:** Отмените локальные изменения и обновите код:
+
+```bash
+cd /opt/mediavelichia
+
+# Вариант 1: Используйте автоматический скрипт (рекомендуется)
+chmod +x fix-git-and-deploy.sh
+./fix-git-and-deploy.sh
+
+# Вариант 2: Вручную отмените изменения и обновите код
+git reset --hard HEAD
+git pull origin main
+```
+
+**Если remote называется не "origin":**
+
+Проверьте:
 ```bash
 cd /opt/mediavelichia
 git remote -v
 ```
 
-Если видите `origin`, используйте:
-```bash
-git pull origin main
-```
-
 Если видите `github`, используйте:
 ```bash
+git reset --hard HEAD
 git pull github main
 ```
 
@@ -55,24 +68,39 @@ docker exec -i mediavelichie-supabase-db psql -U postgres < backend/supabase/mig
 
 ## Полная последовательность команд
 
+### Быстрый способ (автоматический скрипт):
+
+```bash
+cd /opt/mediavelichia
+chmod +x fix-git-and-deploy.sh
+./fix-git-and-deploy.sh
+# Затем примените миграцию:
+./deploy-migration.sh
+```
+
+### Ручной способ:
+
 ```bash
 cd /opt/mediavelichia
 
-# 1. Проверьте remote
+# 1. Решите конфликт Git (если есть)
+git reset --hard HEAD
+
+# 2. Проверьте remote
 git remote -v
 
-# 2. Обновите код (используйте правильный remote из шага 1)
+# 3. Обновите код (используйте правильный remote из шага 2)
 git pull origin main
 # ИЛИ
 git pull github main
 
-# 3. Проверьте наличие файла миграции
+# 4. Проверьте наличие файла миграции
 ls -la backend/supabase/migrations/20260128133013_full_schema_export.sql
 
-# 4. Примените миграцию напрямую (если скрипт не работает)
+# 5. Примените миграцию напрямую (самый надежный способ)
 docker exec -i mediavelichie-supabase-db psql -U postgres < backend/supabase/migrations/20260128133013_full_schema_export.sql
 
-# 5. Или используйте скрипт (если он работает)
+# ИЛИ используйте скрипт (если он работает)
 chmod +x deploy-migration.sh
 ./deploy-migration.sh
 ```
