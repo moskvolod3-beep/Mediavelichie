@@ -32,12 +32,18 @@ cd /opt/mediavelichia
 # Получите последние изменения
 git pull origin main
 
+# Убедитесь что .env файл содержит правильный SUPABASE_URL
+cat .env | grep SUPABASE_URL
+
 # Пересоберите контейнер (Dockerfile автоматически заменит все localhost URL)
+# Важно: переменные из .env автоматически передаются в Docker build
 docker compose -f docker-compose.prod.yml build web
 
 # Перезапустите контейнер
 docker compose -f docker-compose.prod.yml up -d web
 ```
+
+**Важно:** Убедитесь, что в `.env` файле указан правильный `SUPABASE_URL`, иначе замена не произойдет!
 
 ### Шаг 3: Проверьте результат
 
@@ -48,7 +54,25 @@ docker compose -f docker-compose.prod.yml up -d web
 
 ## Если все еще не работает
 
-### Вариант A: Использовать скрипт замены
+### Вариант A: Проверить и исправить в запущенном контейнере
+
+```bash
+cd /opt/mediavelichia
+
+# Получите скрипт
+git pull origin main
+chmod +x verify-and-fix-urls.sh
+
+# Проверьте и исправьте URL в запущенном контейнере
+./verify-and-fix-urls.sh
+
+# Или укажите URL вручную
+./verify-and-fix-urls.sh https://your-project-id.supabase.co
+```
+
+Это временное решение - изменения будут потеряны при пересборке контейнера.
+
+### Вариант B: Использовать скрипт замены в исходниках
 
 ```bash
 cd /opt/mediavelichia
