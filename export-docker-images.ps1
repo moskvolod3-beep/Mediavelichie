@@ -1,7 +1,8 @@
 # PowerShell скрипт для экспорта Docker образов
 # Использование: .\export-docker-images.ps1
 
-$ErrorActionPreference = "Stop"
+# Не останавливаем выполнение при ошибках команд docker
+$ErrorActionPreference = "Continue"
 
 $EXPORT_DIR = ".\docker-images-export"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -43,8 +44,10 @@ $EXPORTED_FILES = @()
 
 foreach ($IMAGE in $IMAGES) {
     # Проверяем существует ли образ (подавляем ошибки)
-    $null = docker image inspect $IMAGE 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0) {
+    $checkResult = docker image inspect $IMAGE 2>&1
+    $imageExists = $LASTEXITCODE -eq 0
+    
+    if ($imageExists) {
         Write-Host "Found image: $IMAGE" -ForegroundColor Green
         
         # Создаем имя файла из имени образа
