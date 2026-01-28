@@ -34,9 +34,31 @@ git reset --hard HEAD
 git pull github main
 ```
 
-### Проблема 2: Синтаксическая ошибка в скрипте
+### Проблема 2: Ошибка кодировки UTF-8
 
-Если скрипт выдает ошибку синтаксиса, возможно проблема с кодировкой файла. Исправьте:
+**Ошибка:** `ERROR: invalid byte sequence for encoding "UTF8": 0xff`
+
+**Решение:** Файл миграции был сохранен в неправильной кодировке. Обновите код из репозитория (исправленная версия уже там):
+
+```bash
+cd /opt/mediavelichia
+git pull origin main  # или git pull github main
+```
+
+Если проблема сохраняется, исправьте кодировку вручную:
+
+```bash
+# Используйте Python скрипт (если Python установлен)
+python3 fix-migration-encoding.py backend/supabase/migrations/20260128133013_full_schema_export.sql
+
+# ИЛИ используйте iconv
+iconv -f UTF-16LE -t UTF-8 backend/supabase/migrations/20260128133013_full_schema_export.sql > migration_utf8.sql
+mv migration_utf8.sql backend/supabase/migrations/20260128133013_full_schema_export.sql
+```
+
+### Проблема 3: Синтаксическая ошибка в скрипте
+
+Если скрипт выдает ошибку синтаксиса, проверьте:
 
 ```bash
 cd /opt/mediavelichia
@@ -47,8 +69,7 @@ git pull origin main  # или git pull github main
 # Проверьте синтаксис скрипта
 bash -n deploy-migration.sh
 
-# Если ошибка, пересоздайте скрипт с правильной кодировкой
-# Или используйте прямое применение миграции (см. ниже)
+# Если ошибка, используйте прямое применение миграции (см. ниже)
 ```
 
 ## Быстрое решение: Прямое применение миграции
