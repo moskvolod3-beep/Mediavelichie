@@ -28,16 +28,19 @@ services:
 
   # ============================================
   # Supabase Studio: Упрощенная версия БЕЗ pg-meta
-  # Использует старую проверенную версию
+  # Использует latest версию (подключение через веб-интерфейс)
   # ============================================
   supabase-studio:
-    image: supabase/studio:20231220-0a8c4b5
+    image: supabase/studio:latest
     container_name: mediavelichie-supabase-studio
     ports:
       - "3000:3000"
     environment:
       # НЕ используем STUDIO_PG_META_URL - Studio попросит подключиться вручную
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
+      # Минимальные переменные для работы
+      DEFAULT_ORGANIZATION_NAME: default
+      DEFAULT_PROJECT_NAME: default
     depends_on:
       supabase:
         condition: service_healthy

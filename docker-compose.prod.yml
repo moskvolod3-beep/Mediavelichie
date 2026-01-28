@@ -117,6 +117,7 @@ services:
   # Доступен через браузер: http://localhost:3000
   # ============================================
   supabase-studio:
+    # Используем latest - если не работает, переключитесь на pgAdmin
     image: supabase/studio:latest
     container_name: mediavelichie-supabase-studio
     ports:
