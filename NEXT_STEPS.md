@@ -26,9 +26,9 @@ chmod +x apply-migrations.sh
 cd /opt/mediavelichia
 
 # Применяем каждую миграцию
-docker exec -i mediavelichie-supabase-db psql -U postgres < supabase/migrations/20240115000000_initial_schema.sql
-docker exec -i mediavelichie-supabase-db psql -U postgres < supabase/migrations/20240115000001_sample_data.sql
-docker exec -i mediavelichie-supabase-db psql -U postgres < supabase/migrations/20240115000002_add_description_to_portfolio.sql
+docker exec -i mediavelichie-supabase-db psql -U postgres < backend/supabase/migrations/20240115000000_initial_schema.sql
+docker exec -i mediavelichie-supabase-db psql -U postgres < backend/supabase/migrations/20240115000001_sample_data.sql
+docker exec -i mediavelichie-supabase-db psql -U postgres < backend/supabase/migrations/20240115000002_add_description_to_portfolio.sql
 ```
 
 ### 2. Проверить работу Supabase
