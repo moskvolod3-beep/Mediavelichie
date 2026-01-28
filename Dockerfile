@@ -17,15 +17,34 @@ COPY ${FRONTEND_DIR}/nginx.conf /etc/nginx/conf.d/default.conf
 # Заменяем локальные URL на серверные во всех файлах
 # (если переменная SUPABASE_URL передана через build args)
 RUN if [ -n "$SUPABASE_URL" ]; then \
-    # Заменяем в HTML файлах \
-    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|http://127.0.0.1:54321|${SUPABASE_URL}|g" {} \; && \
+    echo "Replacing localhost URLs with: $SUPABASE_URL" && \
+    # Заменяем в HTML файлах (все варианты) \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|http://127\.0\.0\.1:54321|${SUPABASE_URL}|g" {} \; && \
     find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|http://localhost:54321|${SUPABASE_URL}|g" {} \; && \
-    # Заменяем в JavaScript файлах \
-    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|http://127.0.0.1:54321|${SUPABASE_URL}|g" {} \; && \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|'http://127\.0\.0\.1:54321'|'${SUPABASE_URL}'|g" {} \; && \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|\"http://127\.0\.0\.1:54321\"|\"${SUPABASE_URL}\"|g" {} \; && \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|'http://localhost:54321'|'${SUPABASE_URL}'|g" {} \; && \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|\"http://localhost:54321\"|\"${SUPABASE_URL}\"|g" {} \; && \
+    # Заменяем в JavaScript файлах (все варианты) \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|http://127\.0\.0\.1:54321|${SUPABASE_URL}|g" {} \; && \
     find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|http://localhost:54321|${SUPABASE_URL}|g" {} \; && \
-    # Заменяем в конфигурационных файлах \
-    sed -i "s|http://127.0.0.1:54321|${SUPABASE_URL}|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
-    sed -i "s|http://localhost:54321|${SUPABASE_URL}|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true; \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|'http://127\.0\.0\.1:54321'|'${SUPABASE_URL}'|g" {} \; && \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|\"http://127\.0\.0\.1:54321\"|\"${SUPABASE_URL}\"|g" {} \; && \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|'http://localhost:54321'|'${SUPABASE_URL}'|g" {} \; && \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|\"http://localhost:54321\"|\"${SUPABASE_URL}\"|g" {} \; && \
+    # Заменяем в конфигурационных файлах (все варианты с кавычками) \
+    sed -i "s|url: 'http://127\.0\.0\.1:54321'|url: '${SUPABASE_URL}'|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
+    sed -i "s|url: \"http://127\.0\.0\.1:54321\"|url: \"${SUPABASE_URL}\"|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
+    sed -i "s|url: 'http://localhost:54321'|url: '${SUPABASE_URL}'|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
+    sed -i "s|url: \"http://localhost:54321\"|url: \"${SUPABASE_URL}\"|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
+    sed -i "s|http://127\.0\.0\.1:54321|${SUPABASE_URL}|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
+    sed -i "s|http://localhost:54321|${SUPABASE_URL}|g" /usr/share/nginx/html/supabase/config.js 2>/dev/null || true && \
+    # Также заменяем в переменных JavaScript \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|let supabaseBaseUrl = 'http://127\.0\.0\.1:54321'|let supabaseBaseUrl = '${SUPABASE_URL}'|g" {} \; && \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|let supabaseBaseUrl = 'http://127\.0\.0\.1:54321'|let supabaseBaseUrl = '${SUPABASE_URL}'|g" {} \; && \
+    find /usr/share/nginx/html -name "*.js" -type f -exec sed -i "s|let supabaseBaseUrl = \"http://127\.0\.0\.1:54321\"|let supabaseBaseUrl = \"${SUPABASE_URL}\"|g" {} \; && \
+    find /usr/share/nginx/html -name "*.html" -type f -exec sed -i "s|let supabaseBaseUrl = \"http://127\.0\.0\.1:54321\"|let supabaseBaseUrl = \"${SUPABASE_URL}\"|g" {} \; && \
+    echo "URL replacement completed"; \
     fi
 
 # Заменяем плейсхолдеры в config.prod.js на реальные значения
