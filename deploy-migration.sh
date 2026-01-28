@@ -1,7 +1,9 @@
 #!/bin/bash
 
 # Скрипт развертывания миграции на удаленном сервере
-# Использование: ./deploy-migration.sh [путь_к_миграции]
+# Использование: 
+#   ./deploy-migration.sh [путь_к_миграции]
+#   AUTO_APPLY=true ./deploy-migration.sh  # Автоматическое применение без подтверждения
 
 set -e
 
@@ -83,11 +85,15 @@ echo "  2. Проверили содержимое миграции"
 echo "  3. Понимаете последствия применения миграции"
 echo ""
 
-read -p "Продолжить применение миграции? (yes/no) " -r
-echo
-if [[ ! $REPLY =~ ^[Yy][Ee][Ss]$ ]]; then
-    echo "Отменено"
-    exit 0
+# Проверяем флаг автоматического применения
+if [ "$AUTO_APPLY" != "true" ]; then
+    read -p "Продолжить применение миграции? (y/yes/n/no) " -r
+    echo
+    REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]' | xargs)
+    if [[ ! "$REPLY" =~ ^(y|yes)$ ]]; then
+        echo "Отменено"
+        exit 0
+    fi
 fi
 
 # Применение миграции
