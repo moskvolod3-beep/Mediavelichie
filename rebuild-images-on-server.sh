@@ -41,7 +41,33 @@ fi
 # Переходим в директорию с образами
 cd "$IMPORT_DIR"
 
-echo -e "${BLUE}Step 1: Importing Docker images...${NC}"
+echo -e "${BLUE}Step 1: Checking dependencies...${NC}"
+
+# Проверяем и устанавливаем unzip если нужно
+if ! command -v unzip &> /dev/null; then
+    echo -e "${YELLOW}unzip not found. Installing...${NC}"
+    if command -v apt-get &> /dev/null; then
+        apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
+    elif command -v yum &> /dev/null; then
+        yum install -y -q unzip > /dev/null 2>&1
+    elif command -v apk &> /dev/null; then
+        apk add --quiet unzip > /dev/null 2>&1
+    else
+        echo -e "${RED}Warning: Cannot install unzip automatically. Please install it manually.${NC}"
+        echo "  Debian/Ubuntu: apt-get install -y unzip"
+        echo "  CentOS/RHEL: yum install -y unzip"
+        echo "  Alpine: apk add unzip"
+    fi
+fi
+
+# Проверяем наличие unzip после установки
+if ! command -v unzip &> /dev/null; then
+    echo -e "${YELLOW}Warning: unzip still not available. Will try alternative methods for .zip files.${NC}"
+fi
+
+echo ""
+
+echo -e "${BLUE}Step 2: Importing Docker images...${NC}"
 echo ""
 
 # Счетчик импортированных образов
@@ -67,7 +93,23 @@ done
 for FILE in *.tar.zip; do
     if [ -f "$FILE" ]; then
         echo -e "${YELLOW}Importing:${NC} $FILE"
-        unzip -p "$FILE" | docker load
+        
+        # Пробуем разные методы распаковки
+        if command -v unzip &> /dev/null; then
+            # Метод 1: Используем unzip
+            unzip -p "$FILE" | docker load
+        elif command -v python3 &> /dev/null; then
+            # Метод 2: Используем Python для распаковки
+            python3 -c "import zipfile, sys; z=zipfile.ZipFile('$FILE'); sys.stdout.buffer.write(z.read(z.namelist()[0]))" | docker load
+        elif command -v python &> /dev/null; then
+            # Метод 3: Используем Python 2 (если доступен)
+            python -c "import zipfile, sys; z=zipfile.ZipFile('$FILE'); sys.stdout.write(z.read(z.namelist()[0]))" | docker load
+        else
+            echo -e "${RED}✗${NC} Cannot import $FILE: unzip and python not available"
+            echo "Please install unzip: apt-get install -y unzip"
+            continue
+        fi
+        
         if [ $? -eq 0 ]; then
             echo -e "${GREEN}✓${NC} Image imported: $FILE"
             ((IMPORTED_COUNT++))
@@ -116,20 +158,20 @@ echo ""
 # Переходим в директорию проекта
 cd "$PROJECT_DIR"
 
-echo -e "${BLUE}Step 2: Stopping existing containers...${NC}"
+echo -e "${BLUE}Step 3: Stopping existing containers...${NC}"
 docker compose -f "$COMPOSE_FILE" down
 echo ""
 
-echo -e "${BLUE}Step 3: Rebuilding containers...${NC}"
+echo -e "${BLUE}Step 4: Rebuilding containers...${NC}"
 echo "This may take a few minutes..."
 docker compose -f "$COMPOSE_FILE" build --no-cache
 echo ""
 
-echo -e "${BLUE}Step 4: Starting containers...${NC}"
+echo -e "${BLUE}Step 5: Starting containers...${NC}"
 docker compose -f "$COMPOSE_FILE" up -d
 echo ""
 
-echo -e "${BLUE}Step 5: Checking container status...${NC}"
+echo -e "${BLUE}Step 6: Checking container status...${NC}"
 sleep 5
 docker compose -f "$COMPOSE_FILE" ps
 echo ""

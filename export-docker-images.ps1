@@ -56,16 +56,49 @@ foreach ($IMAGE in $IMAGES) {
         docker save $IMAGE -o $EXPORT_FILE
         
         if ($LASTEXITCODE -eq 0) {
-            # Сжимаем файл (используем 7zip или gzip если доступен)
+            # Сжимаем файл (предпочитаем gzip для совместимости с Linux)
             Write-Host "  Compressing..."
             
-            # Пробуем использовать gzip через WSL или Git Bash
-            $gzipAvailable = Get-Command gzip -ErrorAction SilentlyContinue
-            if ($gzipAvailable) {
-                gzip -f $EXPORT_FILE
-                $EXPORT_FILE = "$EXPORT_FILE.gz"
-            } else {
-                # Используем PowerShell Compress-Archive (создает .zip)
+            # Метод 1: Пробуем использовать gzip через WSL
+            $gzipAvailable = $false
+            if (Get-Command wsl -ErrorAction SilentlyContinue) {
+                $wslGzipCheck = wsl which gzip 2>$null
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Host "    Using WSL gzip..." -ForegroundColor Gray
+                    wsl gzip -f $(wsl wslpath -a $EXPORT_FILE)
+                    if ($LASTEXITCODE -eq 0) {
+                        $EXPORT_FILE = "$EXPORT_FILE.gz"
+                        $gzipAvailable = $true
+                    }
+                }
+            }
+            
+            # Метод 2: Пробуем использовать gzip через Git Bash
+            if (-not $gzipAvailable -and (Test-Path "C:\Program Files\Git\usr\bin\gzip.exe")) {
+                Write-Host "    Using Git Bash gzip..." -ForegroundColor Gray
+                & "C:\Program Files\Git\usr\bin\gzip.exe" -f $EXPORT_FILE
+                if ($LASTEXITCODE -eq 0) {
+                    $EXPORT_FILE = "$EXPORT_FILE.gz"
+                    $gzipAvailable = $true
+                }
+            }
+            
+            # Метод 3: Пробуем gzip из PATH
+            if (-not $gzipAvailable) {
+                $gzipCmd = Get-Command gzip -ErrorAction SilentlyContinue
+                if ($gzipCmd) {
+                    Write-Host "    Using system gzip..." -ForegroundColor Gray
+                    gzip -f $EXPORT_FILE
+                    if ($LASTEXITCODE -eq 0) {
+                        $EXPORT_FILE = "$EXPORT_FILE.gz"
+                        $gzipAvailable = $true
+                    }
+                }
+            }
+            
+            # Метод 4: Fallback на PowerShell Compress-Archive (создает .zip)
+            if (-not $gzipAvailable) {
+                Write-Host "    Warning: gzip not available, using ZIP format (requires unzip on server)" -ForegroundColor Yellow
                 $ZIP_FILE = "$EXPORT_FILE.zip"
                 Compress-Archive -Path $EXPORT_FILE -DestinationPath $ZIP_FILE -Force
                 Remove-Item $EXPORT_FILE
