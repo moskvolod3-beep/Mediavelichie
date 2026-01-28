@@ -22,8 +22,24 @@ if [ -d "$PROJECT_DIR" ]; then
         echo "✓ Git репозиторий уже инициализирован"
         echo "Обновляем код..."
         cd "$PROJECT_DIR"
+        
+        # Удаляем конфликтующие файлы перед обновлением
+        if [ -f "QUICK_FIX.sh" ]; then
+            echo "Удаляем локальный QUICK_FIX.sh для избежания конфликтов..."
+            rm -f QUICK_FIX.sh
+        fi
+        
         git fetch origin
-        git reset --hard origin/main
+        
+        # Проверяем текущую ветку
+        CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "")
+        if [ "$CURRENT_BRANCH" = "main" ]; then
+            echo "Уже на ветке main, обновляем..."
+            git reset --hard origin/main
+        else
+            echo "Переключаемся на ветку main..."
+            git checkout -f -b main origin/main 2>/dev/null || git checkout -f main
+        fi
     else
         echo "Директория существует, но не является Git репозиторием"
         echo "Инициализируем Git..."
@@ -34,11 +50,17 @@ if [ -d "$PROJECT_DIR" ]; then
             cp "$PROJECT_DIR/.env" /tmp/.env.backup
         fi
         
+        # Удаляем конфликтующие файлы
+        if [ -f "$PROJECT_DIR/QUICK_FIX.sh" ]; then
+            echo "Удаляем локальный QUICK_FIX.sh..."
+            rm -f "$PROJECT_DIR/QUICK_FIX.sh"
+        fi
+        
         cd "$PROJECT_DIR"
         git init
         git remote add origin "$REPO_URL" || git remote set-url origin "$REPO_URL"
         git fetch origin
-        git checkout -b main origin/main
+        git checkout -f -b main origin/main
         
         # Восстанавливаем .env
         if [ -f /tmp/.env.backup ]; then
