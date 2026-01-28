@@ -13,8 +13,9 @@ services:
       context: .
       dockerfile: Dockerfile
       args:
-        SUPABASE_URL: ${SUPABASE_URL:-}
-        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-}
+        # Передаем переменные из .env файла в Docker build
+        SUPABASE_URL: ${SUPABASE_URL}
+        SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
     container_name: mediavelichie-web
     ports:
       - "80:80"
