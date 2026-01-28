@@ -48,21 +48,6 @@ services:
       POSTGRES_HOST: /var/run/postgresql
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
       POSTGRES_DB: postgres
-      PGRST_DB_URI: postgres://authenticator:${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}@localhost:5432/postgres
-      PGRST_DB_SCHEMAS: public,storage,graphql_public
-      PGRST_DB_EXTRA_SEARCH_PATH: public,extensions
-      PGRST_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long-change-me}
-      PGRST_DB_ANON_ROLE: anon
-      GOTRUE_JWT_SECRET: ${JWT_SECRET:-your-super-secret-jwt-token-with-at-least-32-characters-long-change-me}
-      GOTRUE_JWT_EXP: 3600
-      GOTRUE_JWT_DEFAULT_GROUP_NAME: authenticated
-      GOTRUE_JWT_ADMIN_ROLES: service_role
-      GOTRUE_JWT_AUD: authenticated
-      GOTRUE_JWT_ADMIN_AUD: service_role
-      GOTRUE_EXTERNAL_EMAIL_ENABLED: "true"
-      GOTRUE_EXTERNAL_PHONE_ENABLED: "true"
-      GOTRUE_SMS_AUTOCONFIRM: "true"
-      GOTRUE_MAILER_AUTOCONFIRM: "true"
     ports:
       - "5432:5432"
     volumes:
@@ -76,82 +61,6 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
-
-  # ============================================
-  # Supabase pg-meta: Метаданные для Studio
-  # Предоставляет API для работы со схемой БД
-  # ============================================
-  supabase-meta:
-    image: supabase/postgres-meta:v0.91.0
-    container_name: mediavelichie-supabase-meta
-    environment:
-      PG_META_PORT: 8080
-      # ВАЖНО: pg-meta может использовать POSTGRES_HOST вместо PG_META_DB_HOST
-      # Указываем оба варианта для совместимости
-      POSTGRES_HOST: supabase
-      PG_META_DB_HOST: supabase
-      PG_META_DB_PORT: 5432
-      PG_META_DB_NAME: postgres
-      # Используем postgres пользователя (supabase_admin может не существовать в standalone режиме)
-      PG_META_DB_USER: postgres
-      PG_META_DB_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
-      # Дополнительные настройки для работы с обычным PostgreSQL
-      PG_META_DB_SSL: "false"
-      # Явно указываем что это не полный Supabase стек
-      PG_META_DB_POOL_SIZE: 10
-    depends_on:
-      supabase:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - mediavelichie-network
-    healthcheck:
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/health || exit 0"]
-      interval: 10s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-
-  # ============================================
-  # Supabase Studio: Веб-интерфейс для управления БД
-  # Доступен через браузер: http://localhost:3000
-  # ============================================
-  supabase-studio:
-    # Используем latest - если не работает, переключитесь на pgAdmin
-    image: supabase/studio:latest
-    container_name: mediavelichie-supabase-studio
-    ports:
-      - "3000:3000"
-    environment:
-      # Используем pg-meta для автоматического подключения к БД
-      STUDIO_PG_META_URL: http://supabase-meta:8080
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-your-super-secret-postgres-password-change-me}
-      # Дополнительные переменные для Supabase Studio
-      DEFAULT_ORGANIZATION_NAME: ${STUDIO_DEFAULT_ORGANIZATION:-default}
-      DEFAULT_PROJECT_NAME: ${STUDIO_DEFAULT_PROJECT:-default}
-      # Отключаем функции, требующие полного Supabase стека
-      # Используем фиктивные URL чтобы Studio не пытался подключаться к несуществующим сервисам
-      SUPABASE_URL: http://localhost:8000
-      SUPABASE_PUBLIC_URL: http://localhost:8000
-      SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0}
-      SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_KEY:-}
-      # Отключаем функции Storage (если Studio поддерживает)
-      DISABLE_STORAGE: "true"
-    depends_on:
-      supabase:
-        condition: service_healthy
-      supabase-meta:
-        condition: service_healthy
-    restart: unless-stopped
-    networks:
-      - mediavelichie-network
-    healthcheck:
-      # Проверяем что Studio отвечает на HTTP запросы
-      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:3000/ || exit 0"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
 
   # ============================================
   # Editor: Flask сервер для обработки видео
