@@ -20,17 +20,23 @@ cd /opt/mediavelichia
 
 # Список временных файлов для удаления
 TEMP_FILES=(
+    # Studio/pg-meta скрипты
+    "apply-studio-fix.sh"
     "check-available-images.sh"
     "check-studio-logs.sh"
     "fix-pg-meta-host.sh"
     "fix-pg-meta-user.sh"
+    "fix-supabase-studio-connection.sh"
     "switch-to-pgadmin.sh"
     "update-and-check-studio.sh"
     "quick-fix-and-setup.sh"
+    # Конфигурации
     "docker-compose.prod-simple.yml"
+    # Документация по Studio
     "FIX_STUDIO_ERROR.md"
     "FIX_STORAGE_ERROR.md"
     "FIX_STUDIO_IMAGES.md"
+    "FIX_SUPABASE_STUDIO.md"
     "STUDIO_CONNECTION_GUIDE.md"
     "QUICK_STUDIO_CONNECTION.md"
     "UPDATE_STUDIO_CONFIG.md"
