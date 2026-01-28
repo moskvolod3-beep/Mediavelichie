@@ -33,6 +33,7 @@ if [ -n "$(git status --porcelain)" ]; then
     echo ""
     echo -e "${YELLOW}Отменяем локальные изменения...${NC}"
     git reset --hard HEAD
+    git clean -fd
     echo -e "${GREEN}✓ Локальные изменения отменены${NC}"
 else
     echo -e "${GREEN}✓ Нет незакоммиченных изменений${NC}"
@@ -44,8 +45,10 @@ echo "2. Обновление кода из репозитория..."
 if git pull origin main; then
     echo -e "${GREEN}✓ Код обновлен${NC}"
 else
-    echo -e "${RED}✗ Ошибка при обновлении кода${NC}"
-    echo "Попытка принудительного обновления..."
+    echo -e "${YELLOW}⚠ Конфликт при обновлении, разрешаем...${NC}"
+    # Сохраняем текущее состояние
+    git stash push -m "Auto-stash before pull $(date)" 2>/dev/null || true
+    # Принудительно обновляем
     git fetch origin
     git reset --hard origin/main
     echo -e "${GREEN}✓ Код принудительно обновлен${NC}"
