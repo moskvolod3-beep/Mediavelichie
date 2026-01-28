@@ -53,6 +53,11 @@ server-*.md
 # Server info and responses (не синхронизируется с git)
 server-info/
 
+# Docker image exports (большие файлы, не коммитить)
+docker-images-export/
+*.tar.gz
+*.tar.zip
+
 # Cursor AI files (optional - можно оставить или удалить)
 .agent/
 .cursor/
