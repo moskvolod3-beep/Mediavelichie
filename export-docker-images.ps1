@@ -7,22 +7,20 @@ $ErrorActionPreference = "Continue"
 $EXPORT_DIR = ".\docker-images-export"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd_HHmmss"
 
-Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "Экспорт Docker образов для переноса на сервер" -ForegroundColor Cyan
-Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Yellow
+Write-Host "Exporting Docker images for server transfer" -ForegroundColor Yellow
+Write-Host "==========================================" -ForegroundColor Yellow
 Write-Host ""
 
-# Создаем директорию для экспорта
+# Create export directory
 if (-not (Test-Path $EXPORT_DIR)) {
     New-Item -ItemType Directory -Path $EXPORT_DIR | Out-Null
 }
 
-# Список образов для экспорта
+# List of images to export (only custom images - Supabase will be pulled on server)
 $IMAGES = @(
-    "mediavelichie-web:latest",
-    "mediavelichie-editor:latest",
-    "supabase/postgres:15.1.0.117",
-    "supabase/studio:latest"
+    "mediavelichia-web:latest",
+    "mediavelichia-editor:latest"
 )
 
 Write-Host "Searching for local images..." -ForegroundColor Blue
@@ -191,9 +189,9 @@ $($EXPORTED_FILES | ForEach-Object { "- ``$(Split-Path $_ -Leaf)``: $([math]::Ro
 
 $README_CONTENT | Out-File -FilePath $README_FILE -Encoding UTF8
 
-Write-Host "==========================================" -ForegroundColor Cyan
-Write-Host "Экспорт завершен!" -ForegroundColor Green
-Write-Host "==========================================" -ForegroundColor Cyan
+Write-Host "==========================================" -ForegroundColor Yellow
+Write-Host "Export completed!" -ForegroundColor Green
+Write-Host "==========================================" -ForegroundColor Yellow
 Write-Host ""
 Write-Host "Exported files:" -ForegroundColor Blue
 $EXPORTED_FILES | ForEach-Object {
