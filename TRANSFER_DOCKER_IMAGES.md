@@ -27,10 +27,35 @@ scp -r docker-images-export/* root@194.58.88.127:/opt/mediavelichia/docker-image
 
 ### На сервере:
 
+**Вариант 1: Полная пересборка (рекомендуется)**
+
+```bash
+cd /opt/mediavelichia
+chmod +x rebuild-images-on-server.sh
+./rebuild-images-on-server.sh
+```
+
+Этот скрипт автоматически:
+- Импортирует все образы из `/opt/mediavelichia/docker-images-import/`
+- Останавливает существующие контейнеры
+- Пересобирает контейнеры
+- Запускает их заново
+
+**Вариант 2: Только импорт образов**
+
 ```bash
 cd /opt/mediavelichia/docker-images-import
 chmod +x import-images.sh
 ./import-images.sh
+```
+
+Затем вручную пересоберите контейнеры:
+
+```bash
+cd /opt/mediavelichia
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
 ```
 
 ## Подробная инструкция
@@ -71,12 +96,34 @@ scp -r docker-images-export/* root@194.58.88.127:/opt/mediavelichia/docker-image
 
 Аналогично WinSCP, используйте SFTP протокол.
 
-### Шаг 3: Импорт образов на сервере
+### Шаг 3: Импорт и пересборка образов на сервере
+
+**Рекомендуемый способ (автоматическая пересборка):**
 
 ```bash
 # Подключитесь к серверу
 ssh root@194.58.88.127
 
+# Перейдите в директорию проекта
+cd /opt/mediavelichia
+
+# Сделайте скрипт исполняемым (если еще не сделано)
+chmod +x rebuild-images-on-server.sh
+
+# Запустите пересборку
+./rebuild-images-on-server.sh
+```
+
+Скрипт `rebuild-images-on-server.sh` автоматически:
+- Импортирует все образы из `/opt/mediavelichia/docker-images-import/` (поддерживает `.tar`, `.tar.gz`, `.tar.zip`)
+- Останавливает существующие контейнеры
+- Пересобирает контейнеры через Docker Compose
+- Запускает контейнеры заново
+- Показывает статус всех контейнеров
+
+**Альтернативный способ (только импорт):**
+
+```bash
 # Перейдите в директорию с файлами
 cd /opt/mediavelichia/docker-images-import
 
@@ -87,10 +134,14 @@ chmod +x import-images.sh
 ./import-images.sh
 ```
 
-Скрипт автоматически:
-- Распакует все `.tar.gz` файлы
-- Импортирует образы в Docker
-- Покажет список импортированных образов
+Затем вручную пересоберите контейнеры:
+
+```bash
+cd /opt/mediavelichia
+docker compose -f docker-compose.prod.yml down
+docker compose -f docker-compose.prod.yml build
+docker compose -f docker-compose.prod.yml up -d
+```
 
 ### Шаг 4: Проверка и запуск
 
