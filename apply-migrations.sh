@@ -6,7 +6,7 @@
 set -e
 
 PROJECT_DIR="/opt/mediavelichia"
-MIGRATIONS_DIR="$PROJECT_DIR/supabase/migrations"
+MIGRATIONS_DIR="$PROJECT_DIR/backend/supabase/migrations"
 CONTAINER_NAME="mediavelichie-supabase-db"
 
 # Цвета
