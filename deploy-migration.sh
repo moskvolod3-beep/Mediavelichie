@@ -87,10 +87,16 @@ echo ""
 
 # Проверяем флаг автоматического применения
 if [ "$AUTO_APPLY" != "true" ]; then
-    read -p "Продолжить применение миграции? (y/yes/n/no) " -r
+    set +e  # Временно отключаем set -e для read
+    read -p "Продолжить применение миграции? (y/yes/n/no) " -r REPLY
+    set -e  # Включаем обратно
     echo
-    REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]' | xargs)
-    if [[ ! "$REPLY" =~ ^(y|yes)$ ]]; then
+    
+    # Нормализуем ответ: убираем пробелы и приводим к нижнему регистру
+    REPLY=$(echo "$REPLY" | tr '[:upper:]' '[:lower:]' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//')
+    
+    # Проверяем ответ
+    if [ -z "$REPLY" ] || [ "$REPLY" != "y" ] && [ "$REPLY" != "yes" ]; then
         echo "Отменено"
         exit 0
     fi
